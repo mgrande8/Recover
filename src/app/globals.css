@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+/* Recover App - Dark Theme Color Palette */
+:root {
+  /* Main colors */
+  --background: #0A0E1A;        /* Deep navy - main background */
+  --card: #151B2B;              /* Slate - card backgrounds */
+  --card-hover: #1E293B;        /* Lighter slate - hover states */
+  --primary: #3B82F6;           /* Soft blue - buttons, accents */
+  --primary-hover: #2563EB;     /* Darker blue - button hover */
+
+  /* Status colors */
+  --success: #22C55E;           /* Green - good/high scores */
+  --warning: #F59E0B;           /* Amber - okay/medium */
+  --danger: #EF4444;            /* Red - poor/low scores */
+
+  /* Text colors */
+  --text-primary: #F8FAFC;      /* White - main text */
+  --text-secondary: #94A3B8;    /* Gray - secondary text */
+  --text-muted: #64748B;        /* Darker gray - muted text */
+
+  /* Other */
+  --border: #1E293B;            /* Border color */
+  --pro-accent: #FBBF24;        /* Gold - Pro badge */
+
+  /* For Tailwind compatibility */
+  --foreground: var(--text-primary);
+}
+
+/* Tailwind v4 theme configuration */
+@theme inline {
+  /* Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-pro-accent: var(--pro-accent);
+
+  /* Fonts */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Global styles */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--card-hover);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* iOS Safe Area Support */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .bottom-nav-safe {
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* Touch-friendly tap targets */
+@media (pointer: coarse) {
+  button, a {
+    min-height: 44px;
+  }
+}
+
+/* Prevent text size adjustment on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
