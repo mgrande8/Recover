@@ -297,19 +297,21 @@ export default async function InsightsPage() {
                 />
 
                 {/* Upgrade CTA */}
-                <div className="bg-gradient-to-br from-card to-card-hover rounded-xl border border-pro-accent/30 p-6 mt-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Crown className="w-5 h-5 text-pro-accent" />
-                    <span className="font-semibold text-pro-accent">Unlock Pro Insights</span>
+                <Link href="/dashboard/upgrade" className="block">
+                  <div className="bg-gradient-to-br from-card to-card-hover rounded-xl border border-pro-accent/30 p-6 mt-6 hover:border-pro-accent/50 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Crown className="w-5 h-5 text-pro-accent" />
+                      <span className="font-semibold text-pro-accent">Unlock Pro Insights</span>
+                    </div>
+                    <p className="text-text-secondary text-sm mb-4">
+                      Get advanced analytics, sleep debt tracking, and personalized recommendations.
+                    </p>
+                    <div className="flex items-center gap-4">
+                      <span className="text-text-primary font-bold">$4.99/mo</span>
+                      <Button size="sm">Upgrade to Pro</Button>
+                    </div>
                   </div>
-                  <p className="text-text-secondary text-sm mb-4">
-                    Get advanced analytics, sleep debt tracking, and personalized recommendations.
-                  </p>
-                  <div className="flex items-center gap-4">
-                    <span className="text-text-primary font-bold">$4.99/mo</span>
-                    <Button size="sm">Upgrade to Pro</Button>
-                  </div>
-                </div>
+                </Link>
               </>
             )}
           </div>

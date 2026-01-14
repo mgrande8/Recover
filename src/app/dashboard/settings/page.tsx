@@ -13,6 +13,7 @@ import {
   Star,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { ManageSubscriptionButton } from '@/components/ManageSubscriptionButton';
 
 // Bottom navigation component
 function BottomNav() {
@@ -177,21 +178,25 @@ export default async function SettingsPage() {
           <p className="text-xs text-text-muted text-center mt-3">Tap to edit your settings</p>
         </div>
 
-        {/* Upgrade to Pro */}
-        {!profile.is_pro && (
-          <div className="bg-gradient-to-br from-card to-card-hover rounded-xl border border-border p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Star className="w-5 h-5 text-pro-accent" />
-              <span className="text-pro-accent font-semibold">Upgrade to Pro</span>
+        {/* Upgrade to Pro / Manage Subscription */}
+        {!profile.is_pro ? (
+          <Link href="/dashboard/upgrade" className="block">
+            <div className="bg-gradient-to-br from-card to-card-hover rounded-xl border border-border p-4 hover:border-pro-accent/50 transition-colors">
+              <div className="flex items-center gap-2 mb-2">
+                <Star className="w-5 h-5 text-pro-accent" />
+                <span className="text-pro-accent font-semibold">Upgrade to Pro</span>
+              </div>
+              <p className="text-text-secondary text-sm mb-4">
+                Get advanced insights, sleep banking, and correlation analysis.
+              </p>
+              <div className="flex items-center justify-between">
+                <span className="text-text-primary font-bold">$4.99/mo</span>
+                <ChevronRight className="w-5 h-5 text-pro-accent" />
+              </div>
             </div>
-            <p className="text-text-secondary text-sm mb-4">
-              Get advanced insights, sleep banking, and correlation analysis.
-            </p>
-            <div className="flex items-center gap-3">
-              <span className="text-text-primary font-bold">$4.99/mo</span>
-              <Button size="sm">Upgrade</Button>
-            </div>
-          </div>
+          </Link>
+        ) : (
+          <ManageSubscriptionButton />
         )}
 
         {/* Sign out */}
