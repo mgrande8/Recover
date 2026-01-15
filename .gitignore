@@ -43,3 +43,14 @@ npm-cache
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Capacitor
+/ios/App/Pods/
+/ios/App/App.xcworkspace/xcuserdata/
+/ios/App/App.xcworkspace/xcshareddata/
+/ios/DerivedData/
+*.xcuserstate
+
+# Android (if added later)
+/android/app/build/
+/android/.gradle/
