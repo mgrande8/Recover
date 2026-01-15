@@ -46,7 +46,7 @@ export async function updateSession(request: NextRequest) {
   );
 
   // API routes that should be accessible without authentication (e.g., webhooks, debug)
-  const publicApiRoutes = ['/api/stripe/webhook', '/api/debug-pro'];
+  const publicApiRoutes = ['/api/stripe/webhook', '/api/debug-pro', '/api/fix-schema'];
   const isPublicApiRoute = publicApiRoutes.includes(request.nextUrl.pathname);
 
   // If user is not logged in and trying to access a protected route, redirect to login

@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import {
   Moon,
   History,
@@ -89,8 +90,9 @@ export default async function SettingsPage() {
     redirect('/login');
   }
 
-  // Get user profile
-  const { data: profile } = await supabase
+  // Get user profile (use admin to bypass RLS for immediate Pro status visibility)
+  const supabaseAdmin = getSupabaseAdmin();
+  const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('*')
     .eq('id', user.id)

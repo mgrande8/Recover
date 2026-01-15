@@ -125,7 +125,8 @@ export default function EditSettingsPage() {
         .eq('id', user.id);
 
       if (updateError) {
-        setError('Failed to save settings. Please try again.');
+        console.error('Profile update error:', updateError);
+        setError(`Failed to save: ${updateError.message}`);
         return;
       }
 

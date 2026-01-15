@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        // Silently ignore unhandled event types
     }
 
     return NextResponse.json({ received: true });
@@ -82,15 +82,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // Determine expiration date based on plan type
   let proExpiresAt: string;
-  const now = new Date();
 
   // Check if it's annual plan
   if (subscription?.items?.data?.[0]?.price?.id === PRO_ANNUAL_PRICE_ID) {
     // Annual: 1 year from now
-    proExpiresAt = new Date(now.setFullYear(now.getFullYear() + 1)).toISOString();
+    const expiry = new Date();
+    expiry.setFullYear(expiry.getFullYear() + 1);
+    proExpiresAt = expiry.toISOString();
   } else {
     // Monthly: 1 month from now
-    proExpiresAt = new Date(now.setMonth(now.getMonth() + 1)).toISOString();
+    const expiry = new Date();
+    expiry.setMonth(expiry.getMonth() + 1);
+    proExpiresAt = expiry.toISOString();
   }
 
   // Update user to Pro
@@ -117,7 +120,6 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // Create in-app notification
   try {
     await createProUpgradeNotification(userId, plan);
-    console.log(`Pro upgrade notification created for user ${userId}`);
   } catch (notificationError) {
     console.error('Failed to create Pro upgrade notification:', notificationError);
   }
@@ -128,14 +130,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (userData?.user?.email) {
     try {
       await sendProUpgradeEmail(userData.user.email, plan);
-      console.log(`Pro upgrade email sent to ${userData.user.email}`);
     } catch (emailError) {
       // Don't fail the webhook if email fails
       console.error('Failed to send Pro upgrade email:', emailError);
     }
   }
-
-  console.log(`User ${userId} upgraded to Pro`);
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
@@ -168,8 +167,6 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     console.error('Failed to update subscription status:', error);
     throw error;
   }
-
-  console.log(`User ${userId} subscription updated: ${subscription.status}`);
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
@@ -191,8 +188,6 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
           stripe_subscription_id: null,
         })
         .eq('id', profile.id);
-
-      console.log(`User ${profile.id} subscription cancelled`);
     }
     return;
   }
@@ -209,6 +204,4 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     console.error('Failed to cancel subscription:', error);
     throw error;
   }
-
-  console.log(`User ${userId} subscription cancelled`);
 }

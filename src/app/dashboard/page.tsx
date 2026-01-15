@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import {
   Moon,
   Plus,
@@ -335,7 +336,9 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
-  const { data: profile } = await supabase
+  // Use admin client for profile to ensure Pro status shows immediately after purchase
+  const supabaseAdmin = getSupabaseAdmin();
+  const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('*')
     .eq('id', user.id)

@@ -61,7 +61,6 @@ export async function POST() {
     // Create in-app notification
     try {
       await createStreakNotification(user.id, currentStreak);
-      console.log(`Streak notification created for user ${user.id} at ${currentStreak} days`);
     } catch (notificationError) {
       console.error('Failed to create streak notification:', notificationError);
     }
@@ -70,7 +69,6 @@ export async function POST() {
     if (profile?.email_streak_celebrations !== false && profile?.email) {
       try {
         await sendStreakCelebrationEmail(profile.email, currentStreak);
-        console.log(`Streak email sent to ${profile.email} for ${currentStreak} day streak`);
       } catch (emailError) {
         console.error('Failed to send streak email:', emailError);
       }
