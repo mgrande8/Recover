@@ -108,56 +108,55 @@ export default function UpgradePage() {
           <p className="text-text-secondary mb-6">
             Take your sleep optimization to the next level
           </p>
+        </div>
 
-          {/* Plan toggle */}
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="bg-background rounded-lg p-1 flex">
-              <button
-                onClick={() => setSelectedPlan('monthly')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                  selectedPlan === 'monthly'
-                    ? 'bg-card text-text-primary shadow-sm'
-                    : 'text-text-secondary hover:text-text-primary'
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setSelectedPlan('annual')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all relative ${
-                  selectedPlan === 'annual'
-                    ? 'bg-card text-text-primary shadow-sm'
-                    : 'text-text-secondary hover:text-text-primary'
-                }`}
-              >
-                Annual
-                <span className="absolute -top-2 -right-2 bg-success text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-                  -33%
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Pricing display */}
-          {selectedPlan === 'monthly' ? (
-            <div className="mb-6">
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-4xl font-bold text-text-primary">$4.99</span>
-                <span className="text-text-secondary">/month</span>
+        {/* Pricing cards */}
+        <div className="grid grid-cols-2 gap-3">
+          {/* Monthly plan */}
+          <button
+            onClick={() => setSelectedPlan('monthly')}
+            className={`relative p-4 rounded-xl border-2 transition-all text-left ${
+              selectedPlan === 'monthly'
+                ? 'border-pro-accent bg-pro-accent/5'
+                : 'border-border bg-card hover:border-text-muted'
+            }`}
+          >
+            <p className="text-sm text-text-secondary mb-1">Monthly</p>
+            <p className="text-2xl font-bold text-text-primary">$4.99</p>
+            <p className="text-sm text-text-muted">/month</p>
+            {selectedPlan === 'monthly' && (
+              <div className="absolute top-3 right-3 w-5 h-5 bg-pro-accent rounded-full flex items-center justify-center">
+                <Check className="w-3 h-3 text-background" />
               </div>
-            </div>
-          ) : (
-            <div className="mb-6">
-              <div className="flex items-center justify-center gap-2">
-                <span className="text-4xl font-bold text-text-primary">$39.99</span>
-                <span className="text-text-secondary">/year</span>
-              </div>
-              <p className="text-sm text-success mt-1">
-                Only $3.33/month — Save $20/year
-              </p>
-            </div>
-          )}
+            )}
+          </button>
 
+          {/* Annual plan */}
+          <button
+            onClick={() => setSelectedPlan('annual')}
+            className={`relative p-4 rounded-xl border-2 transition-all text-left ${
+              selectedPlan === 'annual'
+                ? 'border-pro-accent bg-pro-accent/5'
+                : 'border-border bg-card hover:border-text-muted'
+            }`}
+          >
+            <span className="absolute -top-2 right-3 bg-success text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
+              SAVE 33%
+            </span>
+            <p className="text-sm text-text-secondary mb-1">Annual</p>
+            <p className="text-2xl font-bold text-text-primary">$39.99</p>
+            <p className="text-sm text-text-muted">/year</p>
+            <p className="text-xs text-success mt-1">$3.33/mo</p>
+            {selectedPlan === 'annual' && (
+              <div className="absolute top-3 right-3 w-5 h-5 bg-pro-accent rounded-full flex items-center justify-center">
+                <Check className="w-3 h-3 text-background" />
+              </div>
+            )}
+          </button>
+        </div>
+
+        {/* Upgrade button */}
+        <div className="bg-card rounded-xl border border-border p-4">
           <Button
             onClick={handleUpgrade}
             disabled={isLoading}
@@ -172,11 +171,11 @@ export default function UpgradePage() {
             ) : (
               <>
                 <Star className="w-5 h-5 mr-2" />
-                {selectedPlan === 'annual' ? 'Get Annual Pro' : 'Get Monthly Pro'}
+                {selectedPlan === 'annual' ? 'Get Annual Pro — $39.99/year' : 'Get Monthly Pro — $4.99/month'}
               </>
             )}
           </Button>
-          <p className="text-xs text-text-muted mt-3">Cancel anytime. No questions asked.</p>
+          <p className="text-xs text-text-muted text-center mt-3">Cancel anytime. No questions asked.</p>
         </div>
 
         {/* Pro features */}
