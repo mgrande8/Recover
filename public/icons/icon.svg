@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#151B2B"/>
+      <stop offset="100%" style="stop-color:#0A0E1A"/>
+    </linearGradient>
+    <linearGradient id="moon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA"/>
+      <stop offset="100%" style="stop-color:#3B82F6"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Moon -->
+  <path d="M256 96c-88.4 0-160 71.6-160 160s71.6 160 160 160c30.4 0 58.8-8.4 83.2-23.2-17.6 9.6-37.6 15.2-59.2 15.2-70.4 0-128-57.6-128-128s57.6-128 128-128c21.6 0 41.6 5.6 59.2 15.2C314.8 104.4 286.4 96 256 96z" fill="url(#moon)"/>
+  <!-- Stars -->
+  <circle cx="380" cy="140" r="8" fill="#F8FAFC" opacity="0.8"/>
+  <circle cx="420" cy="200" r="6" fill="#F8FAFC" opacity="0.6"/>
+  <circle cx="140" cy="180" r="5" fill="#F8FAFC" opacity="0.5"/>
+  <circle cx="100" cy="280" r="7" fill="#F8FAFC" opacity="0.7"/>
+  <circle cx="400" cy="340" r="5" fill="#F8FAFC" opacity="0.5"/>
+</svg>
