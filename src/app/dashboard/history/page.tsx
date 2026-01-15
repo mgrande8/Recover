@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { Moon, History, Settings, Clock, Star, Zap, AlertCircle, FileText } from 'lucide-react';
+import { Moon, History, Settings, Clock, Star, Zap, AlertCircle, FileText, Pencil } from 'lucide-react';
 import {
   calculateRecoveryScore,
   formatDuration,
@@ -81,57 +81,66 @@ function SleepLogCard({ log, profile }: { log: SleepLog; profile: Profile }) {
   const colorClass = getRecoveryColor(recovery.level);
 
   return (
-    <div className="bg-card rounded-xl border border-border p-4">
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <p className="font-semibold text-text-primary">{formatDate(log.date)}</p>
-          <p className="text-sm text-text-secondary">{recovery.message.split('—')[0].trim()}</p>
+    <Link href={`/dashboard/log?date=${log.date}`} className="block">
+      <div className="bg-card rounded-xl border border-border p-4 hover:bg-card-hover hover:border-primary/30 transition-all group">
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="font-semibold text-text-primary">{formatDate(log.date)}</p>
+              <Pencil className="w-3.5 h-3.5 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+            <p className="text-sm text-text-secondary">{recovery.message.split('—')[0].trim()}</p>
+          </div>
+          <div className={`text-3xl font-bold ${colorClass}`}>{recovery.score}</div>
         </div>
-        <div className={`text-3xl font-bold ${colorClass}`}>{recovery.score}</div>
-      </div>
 
-      <div className="grid grid-cols-4 gap-2 text-center">
-        <div className="bg-background rounded-lg py-2">
-          <div className="flex items-center justify-center mb-1">
-            <Clock className="w-3.5 h-3.5 text-text-muted" />
+        <div className="grid grid-cols-4 gap-2 text-center">
+          <div className="bg-background rounded-lg py-2">
+            <div className="flex items-center justify-center mb-1">
+              <Clock className="w-3.5 h-3.5 text-text-muted" />
+            </div>
+            <p className="text-sm font-medium text-text-primary">
+              {formatDuration(log.duration_minutes)}
+            </p>
+            <p className="text-[10px] text-text-muted">Duration</p>
           </div>
-          <p className="text-sm font-medium text-text-primary">
-            {formatDuration(log.duration_minutes)}
-          </p>
-          <p className="text-[10px] text-text-muted">Duration</p>
-        </div>
-        <div className="bg-background rounded-lg py-2">
-          <div className="flex items-center justify-center mb-1">
-            <Star className="w-3.5 h-3.5 text-text-muted" />
+          <div className="bg-background rounded-lg py-2">
+            <div className="flex items-center justify-center mb-1">
+              <Star className="w-3.5 h-3.5 text-text-muted" />
+            </div>
+            <p className="text-sm font-medium text-text-primary">{log.quality}/5</p>
+            <p className="text-[10px] text-text-muted">Quality</p>
           </div>
-          <p className="text-sm font-medium text-text-primary">{log.quality}/5</p>
-          <p className="text-[10px] text-text-muted">Quality</p>
-        </div>
-        <div className="bg-background rounded-lg py-2">
-          <div className="flex items-center justify-center mb-1">
-            <Zap className="w-3.5 h-3.5 text-text-muted" />
+          <div className="bg-background rounded-lg py-2">
+            <div className="flex items-center justify-center mb-1">
+              <Zap className="w-3.5 h-3.5 text-text-muted" />
+            </div>
+            <p className="text-sm font-medium text-text-primary">{log.energy}/5</p>
+            <p className="text-[10px] text-text-muted">Energy</p>
           </div>
-          <p className="text-sm font-medium text-text-primary">{log.energy}/5</p>
-          <p className="text-[10px] text-text-muted">Energy</p>
-        </div>
-        <div className="bg-background rounded-lg py-2">
-          <div className="flex items-center justify-center mb-1">
-            <AlertCircle className="w-3.5 h-3.5 text-text-muted" />
+          <div className="bg-background rounded-lg py-2">
+            <div className="flex items-center justify-center mb-1">
+              <AlertCircle className="w-3.5 h-3.5 text-text-muted" />
+            </div>
+            <p className="text-sm font-medium text-text-primary">{log.interruptions}</p>
+            <p className="text-[10px] text-text-muted">Wake-ups</p>
           </div>
-          <p className="text-sm font-medium text-text-primary">{log.interruptions}</p>
-          <p className="text-[10px] text-text-muted">Wake-ups</p>
         </div>
-      </div>
 
-      {log.notes && (
-        <div className="mt-3 pt-3 border-t border-border">
-          <div className="flex items-start gap-2">
-            <FileText className="w-4 h-4 text-text-muted mt-0.5 flex-shrink-0" />
-            <p className="text-sm text-text-secondary">{log.notes}</p>
+        {log.notes && (
+          <div className="mt-3 pt-3 border-t border-border">
+            <div className="flex items-start gap-2">
+              <FileText className="w-4 h-4 text-text-muted mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-text-secondary">{log.notes}</p>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        <p className="text-xs text-text-muted text-center mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+          Tap to edit
+        </p>
+      </div>
+    </Link>
   );
 }
 

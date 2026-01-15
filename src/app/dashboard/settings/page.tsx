@@ -140,7 +140,12 @@ export default async function SettingsPage() {
               <User className="w-7 h-7 text-primary" />
             </div>
             <div>
-              <p className="font-semibold text-text-primary">{user.email}</p>
+              {profile.name && (
+                <p className="font-semibold text-text-primary">{profile.name}</p>
+              )}
+              <p className={`${profile.name ? 'text-sm text-text-muted' : 'font-semibold text-text-primary'}`}>
+                {user.email}
+              </p>
               <p className="text-sm text-text-secondary">
                 {profile.is_pro ? (
                   <span className="flex items-center gap-1">

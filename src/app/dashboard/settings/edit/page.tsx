@@ -47,6 +47,7 @@ export default function EditSettingsPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Form state
+  const [name, setName] = useState('');
   const [userType, setUserType] = useState<UserType>('general');
   const [goal, setGoal] = useState<Goal>('energy');
   const [bedtime, setBedtime] = useState('22:30');
@@ -73,6 +74,7 @@ export default function EditSettingsPage() {
           .single();
 
         if (profile) {
+          setName(profile.name || '');
           setUserType(profile.user_type as UserType);
           setGoal(profile.goal as Goal);
           setBedtime(profile.typical_bedtime || '22:30');
@@ -108,6 +110,7 @@ export default function EditSettingsPage() {
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
+          name: name || null,
           user_type: userType,
           goal: goal,
           typical_bedtime: bedtime,
@@ -166,6 +169,22 @@ export default function EditSettingsPage() {
             <p className="text-danger text-sm">{error}</p>
           </div>
         )}
+
+        {/* Name */}
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <User className="w-5 h-5 text-primary" />
+            <h2 className="font-medium text-text-primary">Your Name</h2>
+          </div>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter your name"
+            className="w-full bg-background border border-border rounded-lg py-2.5 px-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
+          <p className="text-xs text-text-muted mt-2">This will be displayed in your dashboard greeting</p>
+        </div>
 
         {/* User Type */}
         <div className="bg-card rounded-xl border border-border p-4">

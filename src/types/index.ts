@@ -5,6 +5,7 @@ export type Goal = 'energy' | 'focus' | 'performance' | 'consistency';
 export interface Profile {
   id: string;
   email: string | null;
+  name: string | null;
   user_type: UserType;
   goal: Goal;
   typical_bedtime: string; // TIME format "HH:MM"
@@ -109,6 +110,7 @@ export interface ChecklistInput {
 }
 
 export interface ProfileInput {
+  name?: string;
   user_type?: UserType;
   goal?: Goal;
   typical_bedtime?: string;

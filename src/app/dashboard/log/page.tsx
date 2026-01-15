@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Moon,
@@ -105,19 +105,71 @@ function InterruptionsSelector({
 
 export default function SleepLogPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [existingLog, setExistingLog] = useState<boolean>(false);
 
+  // Get initial date from URL params or default to yesterday
+  const initialDate = searchParams.get('date') || getYesterdayDate();
+
   // Form state
-  const [date, setDate] = useState(getYesterdayDate());
+  const [date, setDate] = useState(initialDate);
   const [bedtime, setBedtime] = useState('22:30');
   const [wakeTime, setWakeTime] = useState('06:30');
   const [quality, setQuality] = useState(3);
   const [energy, setEnergy] = useState(3);
   const [interruptions, setInterruptions] = useState(0);
   const [notes, setNotes] = useState('');
+
+  // Load existing log data when date changes
+  useEffect(() => {
+    const loadExistingLog = async () => {
+      setIsLoadingData(true);
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data } = await supabase
+          .from('sleep_logs')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('date', date)
+          .single();
+
+        if (data) {
+          setExistingLog(true);
+          // Parse bedtime and wake time from ISO strings
+          const bedDate = new Date(data.bedtime);
+          const wakeDate = new Date(data.wake_time);
+          setBedtime(
+            `${bedDate.getHours().toString().padStart(2, '0')}:${bedDate.getMinutes().toString().padStart(2, '0')}`
+          );
+          setWakeTime(
+            `${wakeDate.getHours().toString().padStart(2, '0')}:${wakeDate.getMinutes().toString().padStart(2, '0')}`
+          );
+          setQuality(data.quality);
+          setEnergy(data.energy);
+          setInterruptions(data.interruptions);
+          setNotes(data.notes || '');
+        } else {
+          setExistingLog(false);
+          // Reset to defaults for new log
+          setBedtime('22:30');
+          setWakeTime('06:30');
+          setQuality(3);
+          setEnergy(3);
+          setInterruptions(0);
+          setNotes('');
+        }
+      }
+      setIsLoadingData(false);
+    };
+
+    loadExistingLog();
+  }, [date]);
 
   // Calculate duration
   const calculateDuration = () => {
@@ -137,27 +189,6 @@ export default function SleepLogPage() {
   const durationMinutes = calculateDuration();
   const durationHours = Math.floor(durationMinutes / 60);
   const durationMins = durationMinutes % 60;
-
-  // Check if log exists for selected date
-  useEffect(() => {
-    const checkExistingLog = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (user) {
-        const { data } = await supabase
-          .from('sleep_logs')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('date', date)
-          .single();
-
-        setExistingLog(!!data);
-      }
-    };
-
-    checkExistingLog();
-  }, [date]);
 
   // Navigate date
   const navigateDate = (direction: 'prev' | 'next') => {
@@ -263,12 +294,19 @@ export default function SleepLogPage() {
       <header className="bg-card border-b border-border sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center">
           <Link
-            href="/dashboard"
+            href={existingLog ? "/dashboard/history" : "/dashboard"}
             className="text-text-secondary hover:text-text-primary transition-colors mr-4"
           >
             <ArrowLeft className="w-6 h-6" />
           </Link>
-          <h1 className="text-lg font-semibold text-text-primary">Log Sleep</h1>
+          <div>
+            <h1 className="text-lg font-semibold text-text-primary">
+              {existingLog ? 'Edit Sleep Log' : 'Log Sleep'}
+            </h1>
+            {existingLog && (
+              <p className="text-xs text-text-muted">Editing existing entry</p>
+            )}
+          </div>
         </div>
       </header>
 
@@ -282,20 +320,23 @@ export default function SleepLogPage() {
               type="button"
               onClick={() => navigateDate('prev')}
               className="p-2 text-text-secondary hover:text-text-primary transition-colors"
+              disabled={isLoadingData}
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <div className="text-center">
+            <div className="text-center min-w-[160px]">
               <p className="text-xl font-semibold text-text-primary">{formatDate(date)}</p>
-              {existingLog && (
-                <p className="text-xs text-warning mt-1">Already logged - will update</p>
-              )}
+              {isLoadingData ? (
+                <p className="text-xs text-text-muted mt-1">Loading...</p>
+              ) : existingLog ? (
+                <p className="text-xs text-warning mt-1">Editing existing entry</p>
+              ) : null}
             </div>
             <button
               type="button"
               onClick={() => navigateDate('next')}
               className="p-2 text-text-secondary hover:text-text-primary transition-colors"
-              disabled={date >= new Date().toISOString().split('T')[0]}
+              disabled={date >= new Date().toISOString().split('T')[0] || isLoadingData}
             >
               <ChevronRight className="w-5 h-5" />
             </button>

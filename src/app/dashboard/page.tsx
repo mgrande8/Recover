@@ -17,6 +17,7 @@ import {
   Lightbulb,
   Check,
   Flame,
+  Crown,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import {
@@ -28,6 +29,8 @@ import {
   getTodayDate,
 } from '@/lib/utils';
 import type { Profile, SleepLog, ChecklistLog } from '@/types';
+import { DashboardProCharts } from '@/components/DashboardProCharts';
+import { ShareStats } from '@/components/ShareStats';
 
 // Navigation component
 function BottomNav() {
@@ -342,13 +345,13 @@ export default async function DashboardPage() {
     redirect('/onboarding');
   }
 
-  // Get recent sleep logs
+  // Get recent sleep logs (14 days for Pro charts)
   const { data: sleepLogs } = await supabase
     .from('sleep_logs')
     .select('*')
     .eq('user_id', user.id)
     .order('date', { ascending: false })
-    .limit(7);
+    .limit(14);
 
   // Get today's checklist
   const today = getTodayDate();
@@ -379,7 +382,10 @@ export default async function DashboardPage() {
     return 'Good evening';
   };
 
-  const userName = profile?.email?.split('@')[0] || 'there';
+  const userName = profile?.name || profile?.email?.split('@')[0] || 'there';
+
+  // Normalize is_pro to handle potential type coercion issues from database
+  const isPro = profile.is_pro === true || profile.is_pro === 'true' || profile.is_pro === 1;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -390,12 +396,21 @@ export default async function DashboardPage() {
             <Moon className="w-7 h-7 text-primary" />
             <span className="text-lg font-bold text-text-primary">Recover</span>
           </div>
-          <Link href="/dashboard/log">
-            <Button size="sm">
-              <Plus className="w-4 h-4 mr-1" />
-              Log Sleep
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            {hasLogs && (
+              <ShareStats
+                sleepLogs={sleepLogs || []}
+                profile={profile}
+                currentStreak={currentStreak}
+              />
+            )}
+            <Link href="/dashboard/log">
+              <Button size="sm">
+                <Plus className="w-4 h-4 mr-1" />
+                Log Sleep
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -452,6 +467,11 @@ export default async function DashboardPage() {
 
             {/* Weekly trend */}
             <WeeklyTrend sleepLogs={sleepLogs} profile={profile} />
+
+            {/* Pro Analytics Charts */}
+            {isPro && (
+              <DashboardProCharts sleepLogs={sleepLogs} profile={profile} />
+            )}
 
             {/* Recent logs */}
             <RecentLogs sleepLogs={sleepLogs} profile={profile} />

@@ -40,13 +40,17 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Define public routes that don't require authentication
-  const publicRoutes = ['/', '/login', '/signup', '/auth/callback'];
+  const publicRoutes = ['/', '/login', '/signup', '/auth/callback', '/forgot-password', '/reset-password'];
   const isPublicRoute = publicRoutes.some(
     (route) => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith('/auth/')
   );
 
+  // API routes that should be accessible without authentication (e.g., webhooks, debug)
+  const publicApiRoutes = ['/api/stripe/webhook', '/api/debug-pro'];
+  const isPublicApiRoute = publicApiRoutes.includes(request.nextUrl.pathname);
+
   // If user is not logged in and trying to access a protected route, redirect to login
-  if (!user && !isPublicRoute) {
+  if (!user && !isPublicRoute && !isPublicApiRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);

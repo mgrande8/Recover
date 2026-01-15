@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 // Production URL - update this to your Vercel deployment URL
-const PRODUCTION_URL = process.env.CAPACITOR_SERVER_URL || 'https://recover-app.vercel.app';
+const PRODUCTION_URL = process.env.CAPACITOR_SERVER_URL || 'https://recover-five.vercel.app';
 
 const config: CapacitorConfig = {
   appId: 'com.recover.app',

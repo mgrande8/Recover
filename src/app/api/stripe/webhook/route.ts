@@ -80,11 +80,25 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
+  // Determine expiration date based on plan type
+  let proExpiresAt: string;
+  const now = new Date();
+
+  // Check if it's annual plan
+  if (subscription?.items?.data?.[0]?.price?.id === PRO_ANNUAL_PRICE_ID) {
+    // Annual: 1 year from now
+    proExpiresAt = new Date(now.setFullYear(now.getFullYear() + 1)).toISOString();
+  } else {
+    // Monthly: 1 month from now
+    proExpiresAt = new Date(now.setMonth(now.getMonth() + 1)).toISOString();
+  }
+
   // Update user to Pro
   const { error } = await supabaseAdmin
     .from('profiles')
     .update({
       is_pro: true,
+      pro_expires_at: proExpiresAt,
       stripe_subscription_id: session.subscription as string,
     })
     .eq('id', userId);
@@ -134,10 +148,18 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
   const isActive = subscription.status === 'active' || subscription.status === 'trialing';
 
+  // Calculate expiration date from Stripe's current_period_end
+  let proExpiresAt: string | null = null;
+  const periodEnd = (subscription as any).current_period_end;
+  if (isActive && periodEnd) {
+    proExpiresAt = new Date(periodEnd * 1000).toISOString();
+  }
+
   const { error } = await getSupabaseAdmin()
     .from('profiles')
     .update({
       is_pro: isActive,
+      pro_expires_at: proExpiresAt,
       stripe_subscription_id: subscription.id,
     })
     .eq('id', userId);

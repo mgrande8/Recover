@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -11,8 +12,10 @@ import {
   BarChart3,
   Sparkles,
   Loader2,
+  Crown,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
+import { createClient } from '@/lib/supabase/client';
 
 const proFeatures = [
   {
@@ -52,8 +55,34 @@ const comparisonFeatures = [
 type PlanType = 'monthly' | 'annual';
 
 export default function UpgradePage() {
+  const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('annual');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingPro, setIsCheckingPro] = useState(true);
+  const [isPro, setIsPro] = useState(false);
+
+  // Check if user is already Pro
+  useEffect(() => {
+    const checkProStatus = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_pro')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.is_pro) {
+          setIsPro(true);
+        }
+      }
+      setIsCheckingPro(false);
+    };
+
+    checkProStatus();
+  }, []);
 
   const handleUpgrade = async () => {
     setIsLoading(true);
@@ -78,6 +107,85 @@ export default function UpgradePage() {
       setIsLoading(false);
     }
   };
+
+  // Loading state
+  if (isCheckingPro) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      </div>
+    );
+  }
+
+  // Already Pro state
+  if (isPro) {
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <header className="bg-card border-b border-border sticky top-0 z-10">
+          <div className="max-w-lg mx-auto px-4 py-4 flex items-center">
+            <Link
+              href="/dashboard/settings"
+              className="text-text-secondary hover:text-text-primary transition-colors mr-4"
+            >
+              <ArrowLeft className="w-6 h-6" />
+            </Link>
+            <div>
+              <h1 className="text-lg font-semibold text-text-primary">Pro Membership</h1>
+              <p className="text-sm text-text-secondary">You&apos;re all set!</p>
+            </div>
+          </div>
+        </header>
+
+        <main className="max-w-lg mx-auto px-4 py-6">
+          <div className="bg-gradient-to-br from-pro-accent/20 to-pro-accent/5 rounded-2xl border border-pro-accent/30 p-8 text-center">
+            <div className="w-20 h-20 bg-pro-accent/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Crown className="w-10 h-10 text-pro-accent" />
+            </div>
+            <h2 className="text-2xl font-bold text-text-primary mb-2">You&apos;re a Pro Member!</h2>
+            <p className="text-text-secondary mb-6">
+              Thank you for supporting Recover. You have access to all Pro features including advanced insights, sleep debt tracking, and correlation analysis.
+            </p>
+            <div className="space-y-3">
+              <Link href="/dashboard/insights">
+                <Button className="w-full bg-pro-accent hover:bg-pro-accent/90 text-background">
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  View Pro Insights
+                </Button>
+              </Link>
+              <Link href="/dashboard">
+                <Button variant="outline" className="w-full">
+                  Go to Dashboard
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Pro features reminder */}
+          <div className="mt-6 space-y-3">
+            <h3 className="text-sm font-medium text-text-secondary uppercase tracking-wide">Your Pro Features</h3>
+            {proFeatures.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <div
+                  key={feature.title}
+                  className="bg-card rounded-xl border border-border p-4 flex items-start gap-4"
+                >
+                  <div className="w-10 h-10 bg-pro-accent/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icon className="w-5 h-5 text-pro-accent" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-text-primary">{feature.title}</p>
+                    <p className="text-sm text-text-secondary">{feature.description}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
