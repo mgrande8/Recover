@@ -227,8 +227,26 @@ export default function SleepLogPage() {
         return;
       }
 
-      // Show success toast and redirect
-      showToast(existingLog ? 'Sleep log updated!' : 'Sleep log saved!', 'success');
+      // Check for streak milestone (only for new logs, not updates)
+      if (!existingLog) {
+        try {
+          const streakResponse = await fetch('/api/streak/check', { method: 'POST' });
+          const streakData = await streakResponse.json();
+
+          if (streakData.milestone) {
+            // Show celebration toast for milestone
+            showToast(`${streakData.message}`, 'success');
+          } else {
+            showToast('Sleep log saved!', 'success');
+          }
+        } catch {
+          // If streak check fails, still show success
+          showToast('Sleep log saved!', 'success');
+        }
+      } else {
+        showToast('Sleep log updated!', 'success');
+      }
+
       router.push('/dashboard');
       router.refresh();
     } catch (err) {

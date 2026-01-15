@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { ManageSubscriptionButton } from '@/components/ManageSubscriptionButton';
+import { ProUpgradeSuccessModal } from '@/components/ProUpgradeSuccessModal';
 
 // Bottom navigation component
 function BottomNav() {
@@ -117,6 +119,11 @@ export default async function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      {/* Pro upgrade success modal */}
+      <Suspense fallback={null}>
+        <ProUpgradeSuccessModal />
+      </Suspense>
+
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4">

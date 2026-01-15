@@ -16,6 +16,7 @@ import {
   ClipboardCheck,
   Lightbulb,
   Check,
+  Flame,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import {
@@ -117,6 +118,33 @@ function RecoveryScoreCard({
           <p className="text-lg font-semibold text-text-primary">{sleepLog.energy}/5</p>
           <p className="text-xs text-text-muted">Energy</p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Streak widget component
+function StreakWidget({ currentStreak, longestStreak }: { currentStreak: number; longestStreak: number }) {
+  if (currentStreak === 0) return null;
+
+  return (
+    <div className="bg-card rounded-xl border border-border p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
+            <Flame className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <p className="text-sm text-text-secondary">Current Streak</p>
+            <p className="text-2xl font-bold text-text-primary">{currentStreak} {currentStreak === 1 ? 'day' : 'days'}</p>
+          </div>
+        </div>
+        {longestStreak > currentStreak && (
+          <div className="text-right">
+            <p className="text-xs text-text-muted">Best</p>
+            <p className="text-sm font-medium text-text-secondary">{longestStreak} days</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -331,6 +359,16 @@ export default async function DashboardPage() {
     .eq('date', today)
     .single();
 
+  // Get user streak
+  const { data: streakData } = await supabase
+    .from('user_streaks')
+    .select('current_streak, longest_streak')
+    .eq('user_id', user.id)
+    .single();
+
+  const currentStreak = streakData?.current_streak || 0;
+  const longestStreak = streakData?.longest_streak || 0;
+
   const hasLogs = sleepLogs && sleepLogs.length > 0;
   const latestLog = hasLogs ? sleepLogs[0] : null;
 
@@ -408,6 +446,9 @@ export default async function DashboardPage() {
               {/* Insights teaser */}
               <InsightsTeaser sleepLogs={sleepLogs} profile={profile} />
             </div>
+
+            {/* Streak widget */}
+            <StreakWidget currentStreak={currentStreak} longestStreak={longestStreak} />
 
             {/* Weekly trend */}
             <WeeklyTrend sleepLogs={sleepLogs} profile={profile} />

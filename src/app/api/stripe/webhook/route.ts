@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { getStripe } from '@/lib/stripe';
+import { getStripe, PRO_ANNUAL_PRICE_ID } from '@/lib/stripe';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { sendProUpgradeEmail } from '@/lib/email';
+import { createProUpgradeNotification } from '@/lib/notifications';
 import Stripe from 'stripe';
 
 export async function POST(request: Request) {
@@ -60,9 +62,18 @@ export async function POST(request: Request) {
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const stripe = getStripe();
-  const userId = session.subscription
-    ? (await stripe.subscriptions.retrieve(session.subscription as string)).metadata.supabase_user_id
-    : session.metadata?.supabase_user_id;
+  const supabaseAdmin = getSupabaseAdmin();
+
+  // Get subscription details
+  let subscription: Stripe.Subscription | null = null;
+  let userId: string | undefined;
+
+  if (session.subscription) {
+    subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+    userId = subscription.metadata.supabase_user_id;
+  } else {
+    userId = session.metadata?.supabase_user_id;
+  }
 
   if (!userId) {
     console.error('No user ID found in checkout session');
@@ -70,7 +81,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   // Update user to Pro
-  const { error } = await getSupabaseAdmin()
+  const { error } = await supabaseAdmin
     .from('profiles')
     .update({
       is_pro: true,
@@ -81,6 +92,33 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   if (error) {
     console.error('Failed to update user to Pro:', error);
     throw error;
+  }
+
+  // Determine plan type (monthly or annual)
+  let plan: 'monthly' | 'annual' = 'monthly';
+  if (subscription?.items?.data?.[0]?.price?.id === PRO_ANNUAL_PRICE_ID) {
+    plan = 'annual';
+  }
+
+  // Create in-app notification
+  try {
+    await createProUpgradeNotification(userId, plan);
+    console.log(`Pro upgrade notification created for user ${userId}`);
+  } catch (notificationError) {
+    console.error('Failed to create Pro upgrade notification:', notificationError);
+  }
+
+  // Get user email and send congratulations email
+  const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId);
+
+  if (userData?.user?.email) {
+    try {
+      await sendProUpgradeEmail(userData.user.email, plan);
+      console.log(`Pro upgrade email sent to ${userData.user.email}`);
+    } catch (emailError) {
+      // Don't fail the webhook if email fails
+      console.error('Failed to send Pro upgrade email:', emailError);
+    }
   }
 
   console.log(`User ${userId} upgraded to Pro`);

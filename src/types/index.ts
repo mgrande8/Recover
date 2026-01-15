@@ -12,7 +12,36 @@ export interface Profile {
   sleep_goal_hours: number;
   is_pro: boolean;
   pro_expires_at: string | null;
+  // Notification preferences
+  email_weekly_summary: boolean;
+  email_streak_celebrations: boolean;
+  email_reminders: boolean;
+  reminder_time: string; // TIME format "HH:MM"
   created_at: string;
+  updated_at: string;
+}
+
+// Notification types
+export type NotificationType = 'streak' | 'achievement' | 'reminder' | 'weekly_summary' | 'pro_upgrade' | 'system';
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  data: Record<string, unknown>;
+  read: boolean;
+  created_at: string;
+}
+
+export interface UserStreak {
+  id: string;
+  user_id: string;
+  current_streak: number;
+  longest_streak: number;
+  last_log_date: string | null;
+  streak_started_at: string | null;
   updated_at: string;
 }
 
