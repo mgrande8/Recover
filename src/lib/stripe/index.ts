@@ -16,9 +16,11 @@ export function getStripe(): Stripe {
   return stripeInstance;
 }
 
-// Price ID for the Pro subscription (set in Stripe dashboard)
-export const PRO_PRICE_ID = process.env.STRIPE_PRO_PRICE_ID || '';
+// Price IDs for Pro subscriptions (set in Stripe dashboard)
+export const PRO_MONTHLY_PRICE_ID = process.env.STRIPE_PRO_PRICE_ID || '';
+export const PRO_ANNUAL_PRICE_ID = process.env.STRIPE_PRO_ANNUAL_PRICE_ID || '';
 
-// Pro subscription price
-export const PRO_PRICE = 4.99;
-export const PRO_PRICE_DISPLAY = '$4.99/month';
+// Pro subscription prices
+export const PRO_MONTHLY_PRICE = 4.99;
+export const PRO_ANNUAL_PRICE = 39.99;
+export const PRO_ANNUAL_MONTHLY_EQUIVALENT = 3.33; // $39.99 / 12 months

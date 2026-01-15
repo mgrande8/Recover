@@ -13,7 +13,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
-import { PRO_PRICE_DISPLAY } from '@/lib/stripe';
 
 const proFeatures = [
   {
@@ -50,7 +49,10 @@ const comparisonFeatures = [
   { feature: 'Priority support', free: false, pro: true },
 ];
 
+type PlanType = 'monthly' | 'annual';
+
 export default function UpgradePage() {
+  const [selectedPlan, setSelectedPlan] = useState<PlanType>('annual');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleUpgrade = async () => {
@@ -60,6 +62,7 @@ export default function UpgradePage() {
       const response = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: selectedPlan }),
       });
 
       const data = await response.json();
@@ -102,13 +105,59 @@ export default function UpgradePage() {
             <Star className="w-8 h-8 text-pro-accent" />
           </div>
           <h2 className="text-2xl font-bold text-text-primary mb-2">Recover Pro</h2>
-          <p className="text-text-secondary mb-4">
+          <p className="text-text-secondary mb-6">
             Take your sleep optimization to the next level
           </p>
+
+          {/* Plan toggle */}
           <div className="flex items-center justify-center gap-2 mb-6">
-            <span className="text-4xl font-bold text-text-primary">$4.99</span>
-            <span className="text-text-secondary">/month</span>
+            <div className="bg-background rounded-lg p-1 flex">
+              <button
+                onClick={() => setSelectedPlan('monthly')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  selectedPlan === 'monthly'
+                    ? 'bg-card text-text-primary shadow-sm'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setSelectedPlan('annual')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all relative ${
+                  selectedPlan === 'annual'
+                    ? 'bg-card text-text-primary shadow-sm'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                Annual
+                <span className="absolute -top-2 -right-2 bg-success text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                  -33%
+                </span>
+              </button>
+            </div>
           </div>
+
+          {/* Pricing display */}
+          {selectedPlan === 'monthly' ? (
+            <div className="mb-6">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-4xl font-bold text-text-primary">$4.99</span>
+                <span className="text-text-secondary">/month</span>
+              </div>
+            </div>
+          ) : (
+            <div className="mb-6">
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-4xl font-bold text-text-primary">$39.99</span>
+                <span className="text-text-secondary">/year</span>
+              </div>
+              <p className="text-sm text-success mt-1">
+                Only $3.33/month — Save $20/year
+              </p>
+            </div>
+          )}
+
           <Button
             onClick={handleUpgrade}
             disabled={isLoading}
@@ -123,7 +172,7 @@ export default function UpgradePage() {
             ) : (
               <>
                 <Star className="w-5 h-5 mr-2" />
-                Upgrade Now
+                {selectedPlan === 'annual' ? 'Get Annual Pro' : 'Get Monthly Pro'}
               </>
             )}
           </Button>
@@ -191,6 +240,13 @@ export default function UpgradePage() {
             <p className="text-sm text-text-secondary">
               Yes! You can cancel your subscription at any time from your settings. You&apos;ll
               keep Pro access until the end of your billing period.
+            </p>
+          </div>
+          <div className="bg-card rounded-xl border border-border p-4">
+            <p className="font-medium text-text-primary mb-1">Can I switch between plans?</p>
+            <p className="text-sm text-text-secondary">
+              Yes! You can switch between monthly and annual billing anytime through the
+              Stripe customer portal in your settings.
             </p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4">

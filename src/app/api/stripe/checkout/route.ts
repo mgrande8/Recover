@@ -1,9 +1,22 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getStripe, PRO_PRICE_ID } from '@/lib/stripe';
+import { getStripe, PRO_MONTHLY_PRICE_ID, PRO_ANNUAL_PRICE_ID } from '@/lib/stripe';
 
 export async function POST(request: Request) {
   try {
+    // Get the plan type from request body
+    const body = await request.json().catch(() => ({}));
+    const plan = body.plan || 'monthly'; // 'monthly' or 'annual'
+
+    const priceId = plan === 'annual' ? PRO_ANNUAL_PRICE_ID : PRO_MONTHLY_PRICE_ID;
+
+    if (!priceId) {
+      return NextResponse.json(
+        { error: 'Price not configured' },
+        { status: 500 }
+      );
+    }
+
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -49,7 +62,7 @@ export async function POST(request: Request) {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: PRO_PRICE_ID,
+          price: priceId,
           quantity: 1,
         },
       ],
