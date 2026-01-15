@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { Moon, History, Settings, Clock, Star, Zap, AlertCircle, FileText, Pencil } from 'lucide-react';
+import { Moon, History, User, Clock, Star, Zap, AlertCircle, FileText, Pencil } from 'lucide-react';
 import {
   calculateRecoveryScore,
   formatDuration,
@@ -34,8 +34,8 @@ function BottomNav() {
             href="/dashboard/settings"
             className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted hover:text-text-secondary transition-colors"
           >
-            <Settings className="w-5 h-5" />
-            <span className="text-xs">Settings</span>
+            <User className="w-5 h-5" />
+            <span className="text-xs">Profile</span>
           </Link>
         </div>
       </div>

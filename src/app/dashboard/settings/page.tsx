@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/server';
 import {
   Moon,
   History,
-  Settings,
   User,
   Clock,
   Target,
@@ -41,8 +40,8 @@ function BottomNav() {
             href="/dashboard/settings"
             className="flex flex-col items-center gap-1 py-2 px-4 text-primary"
           >
-            <Settings className="w-5 h-5" />
-            <span className="text-xs font-medium">Settings</span>
+            <User className="w-5 h-5" />
+            <span className="text-xs font-medium">Profile</span>
           </Link>
         </div>
       </div>
@@ -127,7 +126,7 @@ export default async function SettingsPage() {
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <h1 className="text-lg font-semibold text-text-primary">Settings</h1>
+          <h1 className="text-lg font-semibold text-text-primary">Profile</h1>
         </div>
       </header>
 
@@ -135,29 +134,32 @@ export default async function SettingsPage() {
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Profile section */}
         <div className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center gap-4 mb-4 pb-4 border-b border-border">
-            <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center">
-              <User className="w-7 h-7 text-primary" />
-            </div>
-            <div>
-              {profile.name && (
-                <p className="font-semibold text-text-primary">{profile.name}</p>
-              )}
-              <p className={`${profile.name ? 'text-sm text-text-muted' : 'font-semibold text-text-primary'}`}>
-                {user.email}
-              </p>
-              <p className="text-sm text-text-secondary">
-                {profile.is_pro ? (
-                  <span className="flex items-center gap-1">
-                    <Star className="w-3.5 h-3.5 text-pro-accent" />
-                    <span className="text-pro-accent">Pro Member</span>
-                  </span>
+          <Link href="/dashboard/settings/edit" className="block">
+            <div className="flex items-center gap-4 mb-4 pb-4 border-b border-border hover:bg-card-hover -m-4 p-4 rounded-t-xl transition-colors">
+              <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center">
+                <User className="w-7 h-7 text-primary" />
+              </div>
+              <div className="flex-1">
+                {profile.name ? (
+                  <p className="font-semibold text-text-primary">{profile.name}</p>
                 ) : (
-                  'Free Account'
+                  <p className="font-semibold text-primary">Add your name</p>
                 )}
-              </p>
+                <p className="text-sm text-text-muted">{user.email}</p>
+                <p className="text-sm text-text-secondary">
+                  {profile.is_pro ? (
+                    <span className="flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 text-pro-accent" />
+                      <span className="text-pro-accent">Pro Member</span>
+                    </span>
+                  ) : (
+                    'Free Account'
+                  )}
+                </p>
+              </div>
+              <ChevronRight className="w-5 h-5 text-text-muted" />
             </div>
-          </div>
+          </Link>
 
           <Link href="/dashboard/settings/edit" className="block">
             <div className="divide-y divide-border hover:bg-card-hover rounded-lg transition-colors -mx-2 px-2">
@@ -187,7 +189,7 @@ export default async function SettingsPage() {
               />
             </div>
           </Link>
-          <p className="text-xs text-text-muted text-center mt-3">Tap to edit your settings</p>
+          <p className="text-xs text-text-muted text-center mt-3">Tap to edit your profile</p>
         </div>
 
         {/* Upgrade to Pro / Manage Subscription */}

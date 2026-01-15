@@ -5,7 +5,7 @@ import {
   Moon,
   Plus,
   History,
-  Settings,
+  User,
   TrendingUp,
   TrendingDown,
   Minus,
@@ -56,8 +56,8 @@ function BottomNav() {
             href="/dashboard/settings"
             className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted hover:text-text-secondary transition-colors"
           >
-            <Settings className="w-5 h-5" />
-            <span className="text-xs">Settings</span>
+            <User className="w-5 h-5" />
+            <span className="text-xs">Profile</span>
           </Link>
         </div>
       </div>
