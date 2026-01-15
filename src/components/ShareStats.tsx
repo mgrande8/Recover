@@ -3,18 +3,17 @@
 import { useState, useRef } from 'react';
 import {
   Share2,
-  Copy,
-  Check,
   X,
   Download,
-  Twitter,
   MessageCircle,
   Flame,
   Moon,
   TrendingUp,
   Clock,
+  Instagram,
+  Twitter,
 } from 'lucide-react';
-import { Button } from '@/components/ui';
+import * as htmlToImage from 'html-to-image';
 import type { SleepLog, Profile } from '@/types';
 import { calculateRecoveryScore, formatDuration } from '@/lib/utils';
 
@@ -26,7 +25,7 @@ interface ShareStatsProps {
 
 export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   if (sleepLogs.length === 0) return null;
@@ -51,65 +50,162 @@ export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProp
     trend = Math.round(avgScore - olderAvg);
   }
 
-  // Generate share text
+  // Generate share text for Twitter
   const shareText = `My sleep stats from Recover:
+
 Recovery Score: ${latestScore}
-7-Day Average: ${avgScore}
-${currentStreak > 0 ? `Streak: ${currentStreak} days` : ''}
-${trend !== 0 ? `Trend: ${trend > 0 ? '+' : ''}${trend} points` : ''}
+7-Day Average: ${avgScore}${currentStreak > 0 ? `\nStreak: ${currentStreak} days` : ''}
 
 Track your sleep with Recover`;
 
   const shareUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
-  // Handle native share
-  const handleNativeShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'My Sleep Stats - Recover',
-          text: shareText,
-          url: shareUrl,
-        });
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          console.error('Share failed:', err);
-        }
-      }
-    }
-  };
+  // Generate image from card
+  const generateImage = async (width?: number, height?: number): Promise<Blob | null> => {
+    if (!cardRef.current) return null;
 
-  // Handle copy to clipboard
-  const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(shareText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Copy failed:', err);
+      // Create a clone of the card for rendering
+      const clone = cardRef.current.cloneNode(true) as HTMLElement;
+
+      // Apply styles for image generation
+      clone.style.backgroundColor = '#0a0a0f';
+      clone.style.padding = '24px';
+      clone.style.borderRadius = '16px';
+
+      if (width && height) {
+        // For Instagram Stories, create a wrapper with the correct dimensions
+        const wrapper = document.createElement('div');
+        wrapper.style.width = `${width}px`;
+        wrapper.style.height = `${height}px`;
+        wrapper.style.backgroundColor = '#0a0a0f';
+        wrapper.style.display = 'flex';
+        wrapper.style.alignItems = 'center';
+        wrapper.style.justifyContent = 'center';
+        wrapper.style.padding = '80px';
+
+        // Scale up the card for better quality
+        clone.style.width = '100%';
+        clone.style.maxWidth = '920px';
+        clone.style.transform = 'scale(1)';
+
+        wrapper.appendChild(clone);
+        document.body.appendChild(wrapper);
+
+        const dataUrl = await htmlToImage.toPng(wrapper, {
+          width,
+          height,
+          quality: 1,
+          pixelRatio: 2,
+        });
+
+        document.body.removeChild(wrapper);
+
+        const response = await fetch(dataUrl);
+        return await response.blob();
+      } else {
+        // Standard image
+        const dataUrl = await htmlToImage.toPng(cardRef.current, {
+          quality: 1,
+          pixelRatio: 2,
+          backgroundColor: '#0a0a0f',
+        });
+
+        const response = await fetch(dataUrl);
+        return await response.blob();
+      }
+    } catch (error) {
+      console.error('Error generating image:', error);
+      return null;
     }
   };
 
-  // Handle Twitter share
-  const handleTwitterShare = () => {
-    const tweetText = encodeURIComponent(`My sleep stats from @RecoverApp:
+  // Download image
+  const downloadImage = async (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Handle Save as Image
+  const handleSaveImage = async () => {
+    setIsGenerating(true);
+    try {
+      const blob = await generateImage();
+      if (blob) {
+        await downloadImage(blob, 'recover-stats.png');
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Handle Messages share
+  const handleMessagesShare = async () => {
+    setIsGenerating(true);
+    try {
+      const blob = await generateImage();
+      if (blob && navigator.share) {
+        const file = new File([blob], 'recover-stats.png', { type: 'image/png' });
+        await navigator.share({
+          text: shareText,
+          files: [file],
+        });
+      } else {
+        // Fallback: open SMS with text only
+        const smsText = encodeURIComponent(shareText);
+        window.location.href = `sms:?&body=${smsText}`;
+      }
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        // Fallback to text-only SMS
+        const smsText = encodeURIComponent(shareText);
+        window.location.href = `sms:?&body=${smsText}`;
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Handle Instagram Stories
+  const handleInstagramShare = async () => {
+    setIsGenerating(true);
+    try {
+      // Instagram Stories dimensions: 1080x1920
+      const blob = await generateImage(1080, 1920);
+      if (blob) {
+        await downloadImage(blob, 'recover-story.png');
+        // Show instruction
+        alert('Image saved! Open Instagram and share to your Story.');
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Handle Twitter/X share
+  const handleTwitterShare = async () => {
+    setIsGenerating(true);
+    try {
+      // For Twitter, we'll open the intent with text
+      // Image sharing via URL requires hosting the image
+      const tweetText = encodeURIComponent(`My sleep stats from Recover:
 
 Recovery Score: ${latestScore}
-7-Day Average: ${avgScore}
-${currentStreak > 0 ? `Streak: ${currentStreak} days` : ''}
+7-Day Average: ${avgScore}${currentStreak > 0 ? `\nStreak: ${currentStreak} days` : ''}
 
 Track your sleep at ${shareUrl}`);
-    window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
-  };
 
-  // Handle Messages share (iOS)
-  const handleMessagesShare = () => {
-    const smsText = encodeURIComponent(shareText);
-    window.location.href = `sms:?&body=${smsText}`;
+      window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
+    } finally {
+      setIsGenerating(false);
+    }
   };
-
-  // Check if Web Share API is available
-  const canNativeShare = typeof navigator !== 'undefined' && !!navigator.share;
 
   return (
     <>
@@ -141,7 +237,7 @@ Track your sleep at ${shareUrl}`);
             <div className="p-4">
               <div
                 ref={cardRef}
-                className="bg-gradient-to-br from-background to-card rounded-xl border border-border p-4"
+                className="bg-gradient-to-br from-[#0a0a0f] to-[#12121a] rounded-xl border border-border p-4"
               >
                 {/* App branding */}
                 <div className="flex items-center gap-2 mb-4">
@@ -192,47 +288,46 @@ Track your sleep at ${shareUrl}`);
             </div>
 
             {/* Share options */}
-            <div className="px-4 pb-4 space-y-3">
-              {/* Native share button (if available) */}
-              {canNativeShare && (
-                <Button onClick={handleNativeShare} className="w-full">
-                  <Share2 className="w-4 h-4 mr-2" />
-                  Share
-                </Button>
+            <div className="px-4 pb-4">
+              {isGenerating && (
+                <div className="text-center py-2 mb-3">
+                  <p className="text-sm text-text-muted">Generating image...</p>
+                </div>
               )}
 
-              {/* Other share options */}
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 <button
-                  onClick={handleCopy}
-                  className="flex flex-col items-center gap-1 p-3 bg-background rounded-lg hover:bg-card-hover transition-colors"
+                  onClick={handleSaveImage}
+                  disabled={isGenerating}
+                  className="flex flex-col items-center gap-1 p-3 bg-background rounded-lg hover:bg-card-hover transition-colors disabled:opacity-50"
                 >
-                  {copied ? (
-                    <Check className="w-5 h-5 text-success" />
-                  ) : (
-                    <Copy className="w-5 h-5 text-text-muted" />
-                  )}
-                  <span className="text-xs text-text-secondary">{copied ? 'Copied!' : 'Copy'}</span>
+                  <Download className="w-5 h-5 text-text-muted" />
+                  <span className="text-xs text-text-secondary">Save</span>
+                </button>
+                <button
+                  onClick={handleMessagesShare}
+                  disabled={isGenerating}
+                  className="flex flex-col items-center gap-1 p-3 bg-background rounded-lg hover:bg-card-hover transition-colors disabled:opacity-50"
+                >
+                  <MessageCircle className="w-5 h-5 text-text-muted" />
+                  <span className="text-xs text-text-secondary">Messages</span>
+                </button>
+                <button
+                  onClick={handleInstagramShare}
+                  disabled={isGenerating}
+                  className="flex flex-col items-center gap-1 p-3 bg-background rounded-lg hover:bg-card-hover transition-colors disabled:opacity-50"
+                >
+                  <Instagram className="w-5 h-5 text-text-muted" />
+                  <span className="text-xs text-text-secondary">Stories</span>
                 </button>
                 <button
                   onClick={handleTwitterShare}
-                  className="flex flex-col items-center gap-1 p-3 bg-background rounded-lg hover:bg-card-hover transition-colors"
+                  disabled={isGenerating}
+                  className="flex flex-col items-center gap-1 p-3 bg-background rounded-lg hover:bg-card-hover transition-colors disabled:opacity-50"
                 >
                   <Twitter className="w-5 h-5 text-text-muted" />
                   <span className="text-xs text-text-secondary">Twitter</span>
                 </button>
-                <button
-                  onClick={handleMessagesShare}
-                  className="flex flex-col items-center gap-1 p-3 bg-background rounded-lg hover:bg-card-hover transition-colors"
-                >
-                  <MessageCircle className="w-5 h-5 text-text-muted" />
-                  <span className="text-xs text-text-secondary">Message</span>
-                </button>
-              </div>
-
-              {/* Text preview */}
-              <div className="bg-background rounded-lg p-3">
-                <p className="text-xs text-text-muted whitespace-pre-line">{shareText}</p>
               </div>
             </div>
           </div>

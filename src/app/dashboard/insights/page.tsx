@@ -570,24 +570,11 @@ export default async function InsightsPage() {
   // Use admin client to bypass RLS for profile fetch (user is already authenticated)
   const supabaseAdmin = getSupabaseAdmin();
 
-  const { data: profile, error: profileError } = await supabaseAdmin
+  const { data: profile } = await supabaseAdmin
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .single();
-
-  // Debug: Compare regular client vs admin client
-  const { data: regularProfile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single();
-
-  console.log('=== PROFILE FETCH COMPARISON ===');
-  console.log('Admin profile.is_pro:', profile?.is_pro, 'type:', typeof profile?.is_pro);
-  console.log('Regular profile.is_pro:', regularProfile?.is_pro, 'type:', typeof regularProfile?.is_pro);
-  console.log('Profile error:', profileError);
-  console.log('================================');
 
   if (!profile?.onboarding_completed) {
     redirect('/onboarding');
@@ -613,17 +600,7 @@ export default async function InsightsPage() {
   const insights = hasEnoughData ? generateInsights(sleepLogs, profile) : [];
 
   // Normalize is_pro to handle potential type coercion issues
-  // (database might return string 'true', number 1, etc.)
-  const rawIsPro = profile.is_pro;
-  const isPro = rawIsPro === true || rawIsPro === 'true' || (rawIsPro as unknown) === 1;
-
-  // Debug: Log Pro status to server console
-  console.log('=== PRO STATUS DEBUG ===');
-  console.log('profile.is_pro (raw):', rawIsPro);
-  console.log('profile.is_pro type:', typeof rawIsPro);
-  console.log('isPro (normalized):', isPro);
-  console.log('profile.pro_expires_at:', profile.pro_expires_at);
-  console.log('========================');
+  const isPro = profile.is_pro === true || profile.is_pro === 'true' || (profile.is_pro as unknown) === 1;
 
   return (
     <div className="min-h-screen bg-background pb-8">
@@ -655,16 +632,6 @@ export default async function InsightsPage() {
 
       {/* Main content */}
       <main className="max-w-lg mx-auto px-4 py-6">
-        {/* Debug info - remove after fixing */}
-        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4 text-xs">
-          <p className="font-bold text-yellow-500 mb-1">Debug Info (remove after fixing):</p>
-          <p className="text-text-primary">Admin profile.is_pro: {JSON.stringify(profile.is_pro)} (type: {typeof profile.is_pro})</p>
-          <p className="text-text-primary">Regular profile.is_pro: {JSON.stringify(regularProfile?.is_pro)} (type: {typeof regularProfile?.is_pro})</p>
-          <p className="text-text-primary">Normalized isPro: {String(isPro)}</p>
-          <p className="text-text-primary">pro_expires_at: {profile.pro_expires_at || 'null'}</p>
-          <p className="text-text-primary">Using: Admin client (bypasses RLS)</p>
-        </div>
-
         {/* Not enough data state */}
         {!hasEnoughData && (
           <div className="bg-card rounded-2xl border border-border p-8 text-center">
