@@ -1,31 +1,41 @@
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 
 // Icon sizes needed for PWA
 const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
 
-// SVG template for the Recover app icon
-const generateSvg = (size) => `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#151B2B"/>
-      <stop offset="100%" style="stop-color:#0A0E1A"/>
-    </linearGradient>
-    <linearGradient id="moon" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#60A5FA"/>
-      <stop offset="100%" style="stop-color:#3B82F6"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
-  <path d="M256 96c-88.4 0-160 71.6-160 160s71.6 160 160 160c30.4 0 58.8-8.4 83.2-23.2-17.6 9.6-37.6 15.2-59.2 15.2-70.4 0-128-57.6-128-128s57.6-128 128-128c21.6 0 41.6 5.6 59.2 15.2C314.8 104.4 286.4 96 256 96z" fill="url(#moon)"/>
-  <circle cx="380" cy="140" r="8" fill="#F8FAFC" opacity="0.8"/>
-  <circle cx="420" cy="200" r="6" fill="#F8FAFC" opacity="0.6"/>
-  <circle cx="140" cy="180" r="5" fill="#F8FAFC" opacity="0.5"/>
-  <circle cx="100" cy="280" r="7" fill="#F8FAFC" opacity="0.7"/>
-  <circle cx="400" cy="340" r="5" fill="#F8FAFC" opacity="0.5"/>
-</svg>`;
+// Create moon and stars icon SVG with solid colors (better compatibility)
+const createIconSvg = (size) => {
+  const scale = size / 512;
 
-// Try to use sharp if available, otherwise create SVG files
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">
+  <!-- Dark navy background with rounded corners -->
+  <rect width="512" height="512" rx="96" fill="#0A0E1A"/>
+
+  <!-- Subtle inner glow -->
+  <rect x="16" y="16" width="480" height="480" rx="80" fill="#151B2B" opacity="0.5"/>
+
+  <!-- Moon crescent - main shape -->
+  <circle cx="256" cy="256" r="140" fill="#3B82F6"/>
+  <!-- Moon cutout to create crescent -->
+  <circle cx="320" cy="200" r="110" fill="#0A0E1A"/>
+
+  <!-- Stars -->
+  <circle cx="380" cy="120" r="12" fill="#F8FAFC"/>
+  <circle cx="420" cy="180" r="8" fill="#F8FAFC" opacity="0.8"/>
+  <circle cx="440" cy="280" r="6" fill="#F8FAFC" opacity="0.6"/>
+  <circle cx="400" cy="360" r="10" fill="#F8FAFC" opacity="0.7"/>
+  <circle cx="360" cy="420" r="7" fill="#F8FAFC" opacity="0.5"/>
+
+  <!-- Small accent stars -->
+  <circle cx="120" cy="140" r="6" fill="#F8FAFC" opacity="0.5"/>
+  <circle cx="90" cy="220" r="8" fill="#F8FAFC" opacity="0.6"/>
+  <circle cx="100" cy="340" r="5" fill="#F8FAFC" opacity="0.4"/>
+  <circle cx="140" cy="400" r="7" fill="#F8FAFC" opacity="0.5"/>
+</svg>`;
+};
+
 async function generateIcons() {
   const iconsDir = path.join(__dirname, '../public/icons');
 
@@ -34,50 +44,54 @@ async function generateIcons() {
     fs.mkdirSync(iconsDir, { recursive: true });
   }
 
-  try {
-    // Try to use sharp for PNG generation
-    const sharp = require('sharp');
+  console.log('Generating PWA icons with moon and stars design...\n');
 
-    console.log('Generating PNG icons with sharp...');
+  // Generate each size
+  for (const size of sizes) {
+    const svg = createIconSvg(512); // Always use 512 as source for best quality
+    const outputPath = path.join(iconsDir, `icon-${size}x${size}.png`);
 
-    for (const size of sizes) {
-      const svg = generateSvg(size);
-      const outputPath = path.join(iconsDir, `icon-${size}x${size}.png`);
+    await sharp(Buffer.from(svg))
+      .resize(size, size, {
+        kernel: sharp.kernel.lanczos3,
+        fit: 'contain',
+        background: { r: 10, g: 14, b: 26, alpha: 1 }
+      })
+      .png({ quality: 100 })
+      .toFile(outputPath);
 
-      await sharp(Buffer.from(svg))
-        .resize(size, size)
-        .png()
-        .toFile(outputPath);
-
-      console.log(`Created: icon-${size}x${size}.png`);
-    }
-
-    // Generate Apple touch icon
-    const appleSvg = generateSvg(180);
-    await sharp(Buffer.from(appleSvg))
-      .resize(180, 180)
-      .png()
-      .toFile(path.join(iconsDir, 'apple-touch-icon.png'));
-    console.log('Created: apple-touch-icon.png');
-
-    console.log('\\nAll icons generated successfully!');
-
-  } catch (err) {
-    if (err.code === 'MODULE_NOT_FOUND') {
-      console.log('sharp not installed. Creating SVG placeholders...');
-      console.log('To generate PNG icons, run: npm install sharp && node scripts/generate-icons.js');
-
-      // Create SVG files as fallback
-      for (const size of sizes) {
-        const svg = generateSvg(size);
-        const outputPath = path.join(iconsDir, `icon-${size}x${size}.svg`);
-        fs.writeFileSync(outputPath, svg);
-        console.log(`Created SVG: icon-${size}x${size}.svg`);
-      }
-    } else {
-      throw err;
-    }
+    console.log(`✓ Created: icon-${size}x${size}.png`);
   }
+
+  // Generate Apple touch icon (180x180)
+  const appleSvg = createIconSvg(512);
+  await sharp(Buffer.from(appleSvg))
+    .resize(180, 180, {
+      kernel: sharp.kernel.lanczos3,
+      fit: 'contain',
+      background: { r: 10, g: 14, b: 26, alpha: 1 }
+    })
+    .png({ quality: 100 })
+    .toFile(path.join(iconsDir, 'apple-touch-icon.png'));
+  console.log('✓ Created: apple-touch-icon.png');
+
+  // Generate favicon
+  const faviconSvg = createIconSvg(512);
+  await sharp(Buffer.from(faviconSvg))
+    .resize(32, 32, {
+      kernel: sharp.kernel.lanczos3,
+      fit: 'contain',
+      background: { r: 10, g: 14, b: 26, alpha: 1 }
+    })
+    .png({ quality: 100 })
+    .toFile(path.join(iconsDir, 'favicon-32x32.png'));
+  console.log('✓ Created: favicon-32x32.png');
+
+  // Also save the SVG
+  fs.writeFileSync(path.join(iconsDir, 'icon.svg'), createIconSvg(512));
+  console.log('✓ Created: icon.svg');
+
+  console.log('\n✅ All icons generated successfully!');
 }
 
 generateIcons().catch(console.error);
