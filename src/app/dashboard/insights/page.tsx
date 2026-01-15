@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import {
   ArrowLeft,
   Clock,
@@ -566,11 +567,27 @@ export default async function InsightsPage() {
     redirect('/login');
   }
 
-  const { data: profile } = await supabase
+  // Use admin client to bypass RLS for profile fetch (user is already authenticated)
+  const supabaseAdmin = getSupabaseAdmin();
+
+  const { data: profile, error: profileError } = await supabaseAdmin
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .single();
+
+  // Debug: Compare regular client vs admin client
+  const { data: regularProfile } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  console.log('=== PROFILE FETCH COMPARISON ===');
+  console.log('Admin profile.is_pro:', profile?.is_pro, 'type:', typeof profile?.is_pro);
+  console.log('Regular profile.is_pro:', regularProfile?.is_pro, 'type:', typeof regularProfile?.is_pro);
+  console.log('Profile error:', profileError);
+  console.log('================================');
 
   if (!profile?.onboarding_completed) {
     redirect('/onboarding');
@@ -641,10 +658,11 @@ export default async function InsightsPage() {
         {/* Debug info - remove after fixing */}
         <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4 text-xs">
           <p className="font-bold text-yellow-500 mb-1">Debug Info (remove after fixing):</p>
-          <p className="text-text-primary">Raw profile.is_pro: {JSON.stringify(profile.is_pro)} (type: {typeof profile.is_pro})</p>
+          <p className="text-text-primary">Admin profile.is_pro: {JSON.stringify(profile.is_pro)} (type: {typeof profile.is_pro})</p>
+          <p className="text-text-primary">Regular profile.is_pro: {JSON.stringify(regularProfile?.is_pro)} (type: {typeof regularProfile?.is_pro})</p>
           <p className="text-text-primary">Normalized isPro: {String(isPro)}</p>
           <p className="text-text-primary">pro_expires_at: {profile.pro_expires_at || 'null'}</p>
-          <p className="text-text-primary">Visit /api/debug-pro to see raw API response</p>
+          <p className="text-text-primary">Using: Admin client (bypasses RLS)</p>
         </div>
 
         {/* Not enough data state */}
