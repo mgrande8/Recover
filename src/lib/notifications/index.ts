@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { sendPushNotification } from '@/lib/push';
 
 export type NotificationType = 'streak' | 'achievement' | 'reminder' | 'weekly_summary' | 'pro_upgrade' | 'system';
 
@@ -19,12 +20,14 @@ export interface CreateNotificationParams {
   title: string;
   message: string;
   data?: Record<string, unknown>;
+  sendPush?: boolean; // Whether to also send a push notification
 }
 
 // Create a notification for a user
 export async function createNotification(params: CreateNotificationParams): Promise<void> {
-  const { userId, type, title, message, data = {} } = params;
+  const { userId, type, title, message, data = {}, sendPush = true } = params;
 
+  // Create in-app notification
   const { error } = await getSupabaseAdmin()
     .from('notifications')
     .insert({
@@ -38,6 +41,20 @@ export async function createNotification(params: CreateNotificationParams): Prom
   if (error) {
     console.error('Failed to create notification:', error);
     throw error;
+  }
+
+  // Send push notification if enabled
+  if (sendPush) {
+    try {
+      await sendPushNotification(userId, {
+        title,
+        body: message,
+        data: { type, ...data },
+      });
+    } catch (pushError) {
+      // Log but don't throw - push failures shouldn't break the app
+      console.error('Failed to send push notification:', pushError);
+    }
   }
 }
 

@@ -19,8 +19,10 @@ export default function ForgotPasswordPage() {
 
     try {
       const supabase = createClient();
+      // Use /auth/confirm for the redirect - Supabase will append token_hash and type=recovery
+      // The confirm route will then redirect to /reset-password
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+        redirectTo: `${window.location.origin}/auth/confirm`,
       });
 
       if (resetError) {

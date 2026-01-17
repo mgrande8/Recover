@@ -3,8 +3,8 @@ import { NextResponse } from 'next/server';
 
 /**
  * Auth callback handler for Supabase.
- * This route exchanges the auth code for a session after OAuth login
- * or email confirmation.
+ * This route exchanges the auth code for a session after OAuth login,
+ * email confirmation, or password reset.
  */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -12,11 +12,19 @@ export async function GET(request: Request) {
   // Get the 'next' parameter for redirecting after auth
   const next = searchParams.get('next') ?? '/dashboard';
 
+  // Check if this is a password reset flow
+  const isPasswordReset = next === '/reset-password';
+
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      // For password reset, skip onboarding check and go directly to reset page
+      if (isPasswordReset) {
+        return NextResponse.redirect(`${origin}/reset-password`);
+      }
+
       // Check if user has completed onboarding
       const {
         data: { user },
@@ -38,6 +46,8 @@ export async function GET(request: Request) {
 
       // Redirect to the intended destination
       return NextResponse.redirect(`${origin}${next}`);
+    } else {
+      console.error('Auth callback error:', error.message);
     }
   }
 

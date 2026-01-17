@@ -19,6 +19,9 @@ import {
   Loader2,
   Bell,
   Mail,
+  Lock,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
@@ -55,10 +58,23 @@ export default function EditSettingsPage() {
   const [sleepGoal, setSleepGoal] = useState(7.5);
 
   // Notification preferences state
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
   const [emailWeeklySummary, setEmailWeeklySummary] = useState(true);
   const [emailStreakCelebrations, setEmailStreakCelebrations] = useState(true);
   const [emailReminders, setEmailReminders] = useState(true);
   const [reminderTime, setReminderTime] = useState('10:00');
+
+  // Password change state
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   // Load current settings
   useEffect(() => {
@@ -81,6 +97,7 @@ export default function EditSettingsPage() {
           setWakeTime(profile.typical_wake_time || '06:30');
           setSleepGoal(profile.sleep_goal_hours || 7.5);
           // Load notification preferences
+          setPushNotificationsEnabled(profile.push_notifications_enabled ?? true);
           setEmailWeeklySummary(profile.email_weekly_summary ?? true);
           setEmailStreakCelebrations(profile.email_streak_celebrations ?? true);
           setEmailReminders(profile.email_reminders ?? true);
@@ -116,6 +133,7 @@ export default function EditSettingsPage() {
           typical_bedtime: bedtime,
           typical_wake_time: wakeTime,
           sleep_goal_hours: sleepGoal,
+          push_notifications_enabled: pushNotificationsEnabled,
           email_weekly_summary: emailWeeklySummary,
           email_streak_celebrations: emailStreakCelebrations,
           email_reminders: emailReminders,
@@ -136,6 +154,56 @@ export default function EditSettingsPage() {
       setError('An unexpected error occurred');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Handle password change
+  const handlePasswordChange = async () => {
+    setPasswordError(null);
+    setPasswordSuccess(false);
+
+    // Validation
+    if (!newPassword || !confirmPassword) {
+      setPasswordError('Please fill in all password fields');
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordError('Password must be at least 8 characters');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      const supabase = createClient();
+
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) {
+        setPasswordError(error.message);
+        return;
+      }
+
+      setPasswordSuccess(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowPasswordSection(false);
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setPasswordSuccess(false), 3000);
+    } catch (err) {
+      setPasswordError('An unexpected error occurred');
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -308,6 +376,34 @@ export default function EditSettingsPage() {
           </div>
 
           <div className="space-y-4">
+            {/* Push Notifications */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Bell className="w-4 h-4 text-text-muted" />
+                <div>
+                  <p className="text-sm text-text-primary">Push Notifications</p>
+                  <p className="text-xs text-text-muted">Receive notifications on your device</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPushNotificationsEnabled(!pushNotificationsEnabled)}
+                className={`relative w-11 h-6 rounded-full transition-colors ${
+                  pushNotificationsEnabled ? 'bg-primary' : 'bg-border'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                    pushNotificationsEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-border pt-4">
+              <p className="text-xs text-text-muted mb-3">Email Notifications</p>
+            </div>
+
             {/* Weekly Summary */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -390,6 +486,111 @@ export default function EditSettingsPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Change Password */}
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-primary" />
+              <h2 className="font-medium text-text-primary">Password</h2>
+            </div>
+            {!showPasswordSection && (
+              <button
+                onClick={() => setShowPasswordSection(true)}
+                className="text-sm text-primary hover:text-primary/80 transition-colors"
+              >
+                Change Password
+              </button>
+            )}
+          </div>
+
+          {passwordSuccess && (
+            <div className="bg-success/10 border border-success/20 rounded-lg p-3 mb-4">
+              <p className="text-success text-sm">Password changed successfully!</p>
+            </div>
+          )}
+
+          {showPasswordSection && (
+            <div className="space-y-4">
+              {passwordError && (
+                <div className="bg-danger/10 border border-danger/20 rounded-lg p-3">
+                  <p className="text-danger text-sm">{passwordError}</p>
+                </div>
+              )}
+
+              {/* New Password */}
+              <div>
+                <label className="text-sm text-text-secondary block mb-2">New Password</label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    className="w-full bg-background border border-border rounded-lg py-2.5 px-3 pr-10 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label className="text-sm text-text-secondary block mb-2">Confirm New Password</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="w-full bg-background border border-border rounded-lg py-2.5 px-3 pr-10 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-xs text-text-muted mt-1">Minimum 8 characters</p>
+              </div>
+
+              {/* Password action buttons */}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  onClick={handlePasswordChange}
+                  size="sm"
+                  isLoading={isChangingPassword}
+                  className="flex-1"
+                >
+                  Update Password
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowPasswordSection(false);
+                    setNewPassword('');
+                    setConfirmPassword('');
+                    setPasswordError(null);
+                  }}
+                  variant="outline"
+                  size="sm"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {!showPasswordSection && (
+            <p className="text-xs text-text-muted">Update your password to keep your account secure</p>
+          )}
         </div>
 
         {/* Save button */}

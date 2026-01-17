@@ -140,22 +140,29 @@ CREATE POLICY "Users can delete own checklist logs"
 
 -- Function to update the updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
 BEGIN
   NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- Function to create a profile when a user signs up
 CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
 BEGIN
   INSERT INTO public.profiles (id, email)
   VALUES (NEW.id, NEW.email);
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- ============================================
 -- TRIGGERS
@@ -180,7 +187,10 @@ CREATE TRIGGER on_auth_user_created
 -- ============================================
 
 -- View for recent sleep data with calculated fields
-CREATE OR REPLACE VIEW sleep_logs_with_stats AS
+-- Using security_invoker to run with caller's permissions (not view owner's)
+CREATE OR REPLACE VIEW sleep_logs_with_stats
+WITH (security_invoker = true)
+AS
 SELECT
   sl.*,
   p.sleep_goal_hours,

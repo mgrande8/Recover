@@ -5,12 +5,16 @@ import { type EmailOtpType } from '@supabase/supabase-js';
 /**
  * Email confirmation handler for Supabase.
  * This route verifies the email confirmation token sent via email.
+ * Handles: signup confirmation, password recovery, magic links
  */
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const token_hash = searchParams.get('token_hash');
   const type = searchParams.get('type') as EmailOtpType | null;
   const next = searchParams.get('next') ?? '/dashboard';
+
+  // Check if this is a password recovery flow
+  const isPasswordRecovery = type === 'recovery';
 
   if (token_hash && type) {
     const supabase = await createClient();
@@ -20,6 +24,11 @@ export async function GET(request: Request) {
     });
 
     if (!error) {
+      // For password recovery, skip onboarding check and go directly to reset page
+      if (isPasswordRecovery) {
+        return NextResponse.redirect(`${origin}/reset-password`);
+      }
+
       // Get the user after verification
       const {
         data: { user },
@@ -41,6 +50,8 @@ export async function GET(request: Request) {
 
       // Redirect to the intended destination
       return NextResponse.redirect(`${origin}${next}`);
+    } else {
+      console.error('Email confirmation error:', error.message);
     }
   }
 

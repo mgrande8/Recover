@@ -70,10 +70,11 @@ CREATE POLICY "Users can delete own notifications"
   ON notifications FOR DELETE
   USING (auth.uid() = user_id);
 
--- Allow service role to insert notifications (for backend/webhooks)
-CREATE POLICY "Service role can insert notifications"
+-- Allow users to insert their own notifications
+-- Note: Service role already bypasses RLS for backend/webhook operations
+CREATE POLICY "Users can insert own notifications"
   ON notifications FOR INSERT
-  WITH CHECK (true);
+  WITH CHECK (auth.uid() = user_id);
 
 -- User streaks policies
 CREATE POLICY "Users can view own streaks"
@@ -92,20 +93,24 @@ CREATE POLICY "Users can update own streaks"
 -- FUNCTION: Update streak on sleep log
 -- ============================================
 CREATE OR REPLACE FUNCTION update_user_streak()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
 DECLARE
-  v_streak_record user_streaks%ROWTYPE;
+  v_streak_record public.user_streaks%ROWTYPE;
   v_yesterday DATE := (NEW.date - INTERVAL '1 day')::DATE;
   v_new_streak INTEGER;
 BEGIN
   -- Get or create streak record for user
   SELECT * INTO v_streak_record
-  FROM user_streaks
+  FROM public.user_streaks
   WHERE user_id = NEW.user_id;
 
   IF NOT FOUND THEN
     -- Create new streak record
-    INSERT INTO user_streaks (user_id, current_streak, longest_streak, last_log_date, streak_started_at)
+    INSERT INTO public.user_streaks (user_id, current_streak, longest_streak, last_log_date, streak_started_at)
     VALUES (NEW.user_id, 1, 1, NEW.date, NEW.date);
     RETURN NEW;
   END IF;
@@ -121,7 +126,7 @@ BEGIN
     -- Streak broken - reset to 1
     v_new_streak := 1;
     -- Update streak_started_at
-    UPDATE user_streaks
+    UPDATE public.user_streaks
     SET streak_started_at = NEW.date
     WHERE user_id = NEW.user_id;
   ELSE
@@ -130,7 +135,7 @@ BEGIN
   END IF;
 
   -- Update streak record
-  UPDATE user_streaks
+  UPDATE public.user_streaks
   SET
     current_streak = v_new_streak,
     longest_streak = GREATEST(longest_streak, v_new_streak),
@@ -140,7 +145,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- ============================================
 -- TRIGGER: Auto-update streak on sleep log

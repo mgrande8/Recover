@@ -21,6 +21,7 @@ import {
   Dumbbell,
   Smartphone,
   Sun,
+  User,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { calculateRecoveryScore, formatDuration } from '@/lib/utils';
@@ -140,6 +141,14 @@ function SleepDebtTracker({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profi
   );
 }
 
+// Helper function to normalize date strings for comparison
+function normalizeDate(dateStr: string): string {
+  // Handle various date formats and return YYYY-MM-DD
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  return date.toISOString().split('T')[0];
+}
+
 // Correlation Analysis (Pro Feature)
 function CorrelationAnalysis({ sleepLogs, checklistLogs, profile }: { sleepLogs: SleepLog[]; checklistLogs: ChecklistLog[]; profile: Profile }) {
   if (checklistLogs.length < 5) {
@@ -172,12 +181,13 @@ function CorrelationAnalysis({ sleepLogs, checklistLogs, profile }: { sleepLogs:
   ];
 
   const correlations = checklistItems.map((item) => {
-    // Match checklist logs with sleep logs by date
+    // Match checklist logs with sleep logs by date (normalize dates for comparison)
     const matchedData: { checked: boolean; quality: number }[] = [];
 
     checklistLogs.forEach((cl) => {
-      const sleepLog = sleepLogs.find((sl) => sl.date === cl.date);
-      if (sleepLog) {
+      const clDate = normalizeDate(cl.date);
+      const sleepLog = sleepLogs.find((sl) => normalizeDate(sl.date) === clDate);
+      if (sleepLog && sleepLog.quality != null) {
         matchedData.push({
           checked: cl[item.key as keyof ChecklistLog] as boolean,
           quality: sleepLog.quality,
@@ -279,19 +289,53 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
     );
   }
 
-  // Find bedtimes that resulted in best quality sleep
-  const bedtimeQuality = sleepLogs.map((log) => {
-    const bedtime = new Date(log.bedtime);
-    let hour = bedtime.getHours() + bedtime.getMinutes() / 60;
-    if (hour < 12) hour += 24; // Normalize for after-midnight bedtimes
+  // Get user's typical bedtime as reference (parse HH:MM format)
+  const [typicalHour, typicalMin] = (profile.typical_bedtime || '22:30').split(':').map(Number);
+  let typicalBedtimeHour = typicalHour + (typicalMin || 0) / 60;
+  // Normalize typical bedtime to evening scale (if before 12, assume after midnight)
+  if (typicalBedtimeHour < 12) typicalBedtimeHour += 24;
 
-    return {
-      hour,
-      quality: log.quality,
-      energy: log.energy,
-      score: calculateRecoveryScore(log, profile).score,
-    };
-  });
+  // Find bedtimes that resulted in best quality sleep
+  // Filter to only include reasonable bedtimes (6 PM to 3 AM, normalized as 18-27)
+  const bedtimeQuality = sleepLogs
+    .map((log) => {
+      const bedtime = new Date(log.bedtime);
+      let hour = bedtime.getHours() + bedtime.getMinutes() / 60;
+      // Normalize: hours 0-5 (midnight to 5 AM) become 24-29
+      if (hour < 6) hour += 24;
+
+      return {
+        hour,
+        quality: log.quality,
+        energy: log.energy,
+        score: calculateRecoveryScore(log, profile).score,
+      };
+    })
+    // Filter out unreasonable bedtimes (before 6 PM or after 3 AM)
+    // Reasonable range: 18 (6 PM) to 27 (3 AM)
+    .filter((bq) => bq.hour >= 18 && bq.hour <= 27);
+
+  if (bedtimeQuality.length < 5) {
+    // Not enough reasonable bedtime data
+    return (
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center flex-shrink-0">
+            <Moon className="w-6 h-6 text-warning" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-sm text-text-secondary">Optimal Bedtime</p>
+              <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
+                PRO
+              </span>
+            </div>
+            <p className="text-sm text-text-muted">Need more data with regular bedtimes (6 PM - 3 AM) to calculate your optimal bedtime.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Group bedtimes into 30-min windows and find the best
   const windows: Record<string, { total: number; count: number; avgScore: number }> = {};
@@ -312,26 +356,43 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
     windows[key].avgScore = windows[key].total / windows[key].count;
   });
 
-  // Find best window
-  let bestWindow = { hour: 22.5, avgScore: 0 };
+  // Find best window, preferring times closer to typical bedtime when scores are similar
+  // Default to typical bedtime if no data
+  let bestWindow = { hour: typicalBedtimeHour, avgScore: 0 };
   Object.entries(windows).forEach(([key, data]) => {
-    if (data.count >= 2 && data.avgScore > bestWindow.avgScore) {
-      bestWindow = { hour: parseFloat(key), avgScore: data.avgScore };
+    const windowHour = parseFloat(key);
+    // Require at least 2 data points for a window to be considered
+    if (data.count >= 2) {
+      // Calculate distance from typical bedtime (prefer closer times)
+      const currentDistance = Math.abs(bestWindow.hour - typicalBedtimeHour);
+      const newDistance = Math.abs(windowHour - typicalBedtimeHour);
+
+      // Select this window if:
+      // 1. Score is significantly better (more than 5 points)
+      // 2. OR score is similar but closer to typical bedtime
+      const scoreDiff = data.avgScore - bestWindow.avgScore;
+      if (scoreDiff > 5 || (scoreDiff > -3 && newDistance < currentDistance)) {
+        bestWindow = { hour: windowHour, avgScore: data.avgScore };
+      }
     }
   });
 
-  // Format time
-  const displayHour = bestWindow.hour > 24 ? bestWindow.hour - 24 : bestWindow.hour;
+  // Format time - handle the 24+ hour normalization
+  let displayHour = bestWindow.hour;
+  if (displayHour >= 24) displayHour -= 24;
+
   const hours = Math.floor(displayHour);
   const minutes = Math.round((displayHour % 1) * 60);
-  const meridian = hours >= 12 && hours < 24 ? 'PM' : 'AM';
+  const meridian = hours >= 12 ? 'PM' : 'AM';
   const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
   const formattedTime = `${displayHours}:${minutes.toString().padStart(2, '0')} ${meridian}`;
 
   // Calculate ideal wake time
-  const idealWakeHour = displayHour + profile.sleep_goal_hours;
-  const wakeHours = Math.floor(idealWakeHour > 24 ? idealWakeHour - 24 : idealWakeHour);
-  const wakeMeridian = wakeHours >= 12 && wakeHours < 24 ? 'PM' : 'AM';
+  let idealWakeHour = displayHour + profile.sleep_goal_hours;
+  if (idealWakeHour >= 24) idealWakeHour -= 24;
+
+  const wakeHours = Math.floor(idealWakeHour);
+  const wakeMeridian = wakeHours >= 12 ? 'PM' : 'AM';
   const displayWakeHours = wakeHours > 12 ? wakeHours - 12 : wakeHours === 0 ? 12 : wakeHours;
   const formattedWakeTime = `${displayWakeHours}:${minutes.toString().padStart(2, '0')} ${wakeMeridian}`;
 
@@ -462,6 +523,140 @@ function WeeklyReport({ sleepLogs, checklistLogs, profile }: { sleepLogs: SleepL
           <span className="text-text-muted">Nights logged</span>
           <span className="text-text-primary font-medium">{thisWeek.length} of 7</span>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Personalized recommendations based on user type
+const userTypeRecommendations: Record<string, { title: string; tips: { icon: React.ElementType; text: string }[] }> = {
+  athlete: {
+    title: 'Athlete Sleep Guide',
+    tips: [
+      { icon: Clock, text: 'Aim for 8-10 hours of sleep. Studies show elite athletes who increased sleep to 8.5h improved sprint speed by 4% and reaction time by 12%.' },
+      { icon: Moon, text: 'Take strategic 20-30 min naps before training or competition to enhance alertness and power output.' },
+      { icon: Zap, text: 'Sleep drives growth hormone and testosterone release essential for muscle repair. Even one poor night can reduce testosterone by 25%.' },
+      { icon: Sun, text: 'Get morning sunlight within 1 hour of waking to regulate your circadian rhythm and improve sleep quality.' },
+    ],
+  },
+  professional: {
+    title: 'Professional Sleep Guide',
+    tips: [
+      { icon: Clock, text: 'Use the 8-8-8 framework: 8 hours work, 8 hours personal time, 8 hours sleep for optimal productivity.' },
+      { icon: Target, text: 'Sleep improves focus, decision-making, and memory. Workers with sufficient sleep have faster reaction times and fewer mistakes.' },
+      { icon: Coffee, text: 'Limit caffeine after 2 PM. A 15-20 min power nap between 1-3 PM can boost afternoon alertness.' },
+      { icon: Smartphone, text: 'Avoid screens 30-60 min before bed. Blue light suppresses melatonin and delays sleep onset.' },
+    ],
+  },
+  parent: {
+    title: 'Parent Sleep Survival Guide',
+    tips: [
+      { icon: Moon, text: 'Nap when baby naps. Even 20-30 min power naps can significantly boost your alertness and mood.' },
+      { icon: Clock, text: 'Split night duties with your partner if possible. Uninterrupted sleep blocks are more restorative than fragmented sleep.' },
+      { icon: Zap, text: 'Protein-rich snacks with complex carbs (like peanut butter toast) provide sustained energy during night feeds.' },
+      { icon: Sun, text: 'Get outside daily, even for 10 minutes. Sunlight helps regulate your body clock and improves mental health.' },
+    ],
+  },
+  general: {
+    title: 'Sleep Essentials',
+    tips: [
+      { icon: Clock, text: 'Aim for 7-9 hours of sleep. Consistency matters more than duration—keep regular bed and wake times.' },
+      { icon: Moon, text: 'Create a dark, cool (65-72°F), quiet sleep environment. Darkness signals your body to produce melatonin.' },
+      { icon: Smartphone, text: 'Stop screen use 30 minutes before bed. Blue light disrupts your natural sleep-wake cycle.' },
+      { icon: Sun, text: 'Get 10-15 min of sunlight within the first hour of waking to boost daytime energy and nighttime sleep quality.' },
+    ],
+  },
+};
+
+// Personalized recommendations based on goal
+const goalRecommendations: Record<string, { title: string; tips: { icon: React.ElementType; text: string }[] }> = {
+  energy: {
+    title: 'Tips for More Energy',
+    tips: [
+      { icon: Sun, text: 'Get 10-15 min of morning sunlight within 1 hour of waking to regulate your circadian rhythm and boost alertness.' },
+      { icon: Dumbbell, text: 'Exercise increases energy more effectively than some sleep medications. Even a 10-min walk boosts circulation and endorphins.' },
+      { icon: Coffee, text: 'Hydration is key—even 2% dehydration causes fatigue and brain fog. Aim for 8 glasses of water daily.' },
+      { icon: Moon, text: 'A strategic 10-20 min power nap between 1-3 PM can recharge your energy without affecting nighttime sleep.' },
+    ],
+  },
+  focus: {
+    title: 'Tips for Better Focus',
+    tips: [
+      { icon: Clock, text: '7 hours of sleep is optimal for cognitive performance. Both too little and too much sleep impair concentration.' },
+      { icon: Moon, text: 'During deep sleep, your brain clears metabolic waste and consolidates memories—essential for learning and attention.' },
+      { icon: Target, text: 'Consistent sleep schedules improve cognitive flexibility and problem-solving. Keep the same bedtime on weekends.' },
+      { icon: Coffee, text: 'Support focus with omega-3s, antioxidants, and B vitamins. Your diet directly fuels cognitive performance.' },
+    ],
+  },
+  performance: {
+    title: 'Tips for Peak Performance',
+    tips: [
+      { icon: Zap, text: 'Sleep extension (adding 1-2 hours) dramatically improves reaction time, accuracy, and physical performance.' },
+      { icon: Moon, text: 'Deep sleep triggers growth hormone release for tissue repair. Avoid alcohol which disrupts this crucial sleep stage.' },
+      { icon: Clock, text: 'Maintain consistent sleep timing. Irregular sleep patterns impair attention, learning, and memory.' },
+      { icon: Target, text: 'Pre-performance naps (20-30 min) can sharpen focus and improve reaction time when you need it most.' },
+    ],
+  },
+  consistency: {
+    title: 'Tips for Sleep Consistency',
+    tips: [
+      { icon: Clock, text: 'Set a non-negotiable bedtime and wake time—even on weekends. Your body clock thrives on routine.' },
+      { icon: Moon, text: 'Create a 30-min wind-down routine. Reading, stretching, or light meditation signals your body it\'s time to sleep.' },
+      { icon: Sun, text: 'Morning light exposure anchors your circadian rhythm and makes it easier to fall asleep at the same time each night.' },
+      { icon: Smartphone, text: 'Avoid screens, caffeine, and intense exercise within 2-3 hours of bedtime for easier, more predictable sleep.' },
+    ],
+  },
+};
+
+// User Type Insights Component (Free)
+function UserTypeInsights({ profile }: { profile: Profile }) {
+  const recommendations = userTypeRecommendations[profile.user_type] || userTypeRecommendations.general;
+
+  return (
+    <div className="bg-card rounded-xl border border-border p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <User className="w-5 h-5 text-primary" />
+        <h3 className="font-semibold text-text-primary">{recommendations.title}</h3>
+      </div>
+      <div className="space-y-3">
+        {recommendations.tips.map((tip, index) => {
+          const Icon = tip.icon;
+          return (
+            <div key={index} className="flex gap-3">
+              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Icon className="w-4 h-4 text-primary" />
+              </div>
+              <p className="text-sm text-text-secondary leading-relaxed">{tip.text}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Goal-Based Insights Component (Free)
+function GoalInsights({ profile }: { profile: Profile }) {
+  const recommendations = goalRecommendations[profile.goal] || goalRecommendations.energy;
+
+  return (
+    <div className="bg-card rounded-xl border border-border p-4">
+      <div className="flex items-center gap-2 mb-4">
+        <Target className="w-5 h-5 text-success" />
+        <h3 className="font-semibold text-text-primary">{recommendations.title}</h3>
+      </div>
+      <div className="space-y-3">
+        {recommendations.tips.map((tip, index) => {
+          const Icon = tip.icon;
+          return (
+            <div key={index} className="flex gap-3">
+              <div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Icon className="w-4 h-4 text-success" />
+              </div>
+              <p className="text-sm text-text-secondary leading-relaxed">{tip.text}</p>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -632,15 +827,27 @@ export default async function InsightsPage() {
 
       {/* Main content */}
       <main className="max-w-lg mx-auto px-4 py-6">
+        {/* Personalized Recommendations (Always visible - Free) */}
+        <div className="space-y-4 mb-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium text-text-secondary uppercase tracking-wide">
+              Personalized for You
+            </h2>
+            <span className="text-xs text-success bg-success/10 px-2 py-0.5 rounded-full">Free</span>
+          </div>
+          <UserTypeInsights profile={profile} />
+          <GoalInsights profile={profile} />
+        </div>
+
         {/* Not enough data state */}
         {!hasEnoughData && (
           <div className="bg-card rounded-2xl border border-border p-8 text-center">
             <div className="w-16 h-16 bg-warning/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Moon className="w-8 h-8 text-warning" />
             </div>
-            <h2 className="text-xl font-semibold text-text-primary mb-2">Need more data</h2>
+            <h2 className="text-xl font-semibold text-text-primary mb-2">Unlock Data Insights</h2>
             <p className="text-text-secondary mb-4">
-              Log at least 3 nights of sleep to unlock your personalized insights.
+              Log at least 3 nights of sleep to see trends and patterns in your sleep data.
             </p>
             <div className="flex justify-center gap-1 mb-6">
               {[1, 2, 3].map((i) => (
