@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import { sendPushNotification } from '@/lib/push';
+// import { sendPushNotification } from '@/lib/push'; // Uncomment when push notifications are enabled
 
 export type NotificationType = 'streak' | 'achievement' | 'reminder' | 'weekly_summary' | 'pro_upgrade' | 'system';
 
@@ -25,7 +25,7 @@ export interface CreateNotificationParams {
 
 // Create a notification for a user
 export async function createNotification(params: CreateNotificationParams): Promise<void> {
-  const { userId, type, title, message, data = {}, sendPush = true } = params;
+  const { userId, type, title, message, data = {} } = params;
 
   // Create in-app notification
   const { error } = await getSupabaseAdmin()
@@ -43,19 +43,18 @@ export async function createNotification(params: CreateNotificationParams): Prom
     throw error;
   }
 
-  // Send push notification if enabled
-  if (sendPush) {
-    try {
-      await sendPushNotification(userId, {
-        title,
-        body: message,
-        data: { type, ...data },
-      });
-    } catch (pushError) {
-      // Log but don't throw - push failures shouldn't break the app
-      console.error('Failed to send push notification:', pushError);
-    }
-  }
+  // Push notifications disabled - uncomment when enabled
+  // if (sendPush) {
+  //   try {
+  //     await sendPushNotification(userId, {
+  //       title,
+  //       body: message,
+  //       data: { type, ...data },
+  //     });
+  //   } catch (pushError) {
+  //     console.error('Failed to send push notification:', pushError);
+  //   }
+  // }
 }
 
 // Create a streak celebration notification
