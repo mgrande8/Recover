@@ -122,18 +122,6 @@ html {
   background: var(--background);
 }
 
-/* Ensure full viewport coverage */
-html, body {
-  height: 100%;
-  overflow: hidden;
-}
-
-#__next, main {
-  height: 100%;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
 /* Touch-friendly tap targets */
 @media (pointer: coarse) {
   button, a {
