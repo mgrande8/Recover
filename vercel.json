@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/push/cron?type=daily",
+      "schedule": "0 20 * * *"
+    },
+    {
+      "path": "/api/push/cron?type=weekly",
+      "schedule": "0 10 * * 0"
+    }
+  ]
+}

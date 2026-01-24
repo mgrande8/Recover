@@ -19,6 +19,7 @@ import {
   Check,
   Flame,
   Crown,
+  CloudSun,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import {
@@ -289,9 +290,12 @@ function InsightsTeaser({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
 
 // Recent logs list
 function RecentLogs({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: Profile }) {
-  if (sleepLogs.length <= 1) return null;
+  // Filter out naps - this section is for night sleep only
+  const nightLogs = sleepLogs.filter((log) => !log.is_nap);
 
-  const recentLogs = sleepLogs.slice(1, 4);
+  if (nightLogs.length <= 1) return null;
+
+  const recentLogs = nightLogs.slice(1, 4);
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -391,9 +395,9 @@ export default async function DashboardPage() {
   const isPro = profile.is_pro === true || profile.is_pro === 'true' || profile.is_pro === 1;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
-      <header className="bg-card border-b border-border">
+      <header className="bg-card border-b border-border pt-safe">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Moon className="w-7 h-7 text-primary" />
@@ -407,6 +411,12 @@ export default async function DashboardPage() {
                 currentStreak={currentStreak}
               />
             )}
+            <Link href="/dashboard/log?nap=true">
+              <Button size="sm" variant="outline">
+                <CloudSun className="w-4 h-4 mr-1" />
+                Nap
+              </Button>
+            </Link>
             <Link href="/dashboard/log">
               <Button size="sm">
                 <Plus className="w-4 h-4 mr-1" />
@@ -489,6 +499,20 @@ export default async function DashboardPage() {
           </>
         )}
       </main>
+
+      {/* Floating Action Buttons */}
+      <div className="fixed bottom-24 right-4 flex flex-col gap-3 z-20">
+        <Link href="/dashboard/log?nap=true">
+          <button className="w-14 h-14 bg-warning rounded-full flex items-center justify-center shadow-lg hover:bg-warning/90 transition-colors">
+            <CloudSun className="w-6 h-6 text-background" />
+          </button>
+        </Link>
+        <Link href="/dashboard/log">
+          <button className="w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg hover:bg-primary-hover transition-colors">
+            <Plus className="w-6 h-6 text-white" />
+          </button>
+        </Link>
+      </div>
 
       {/* Bottom navigation */}
       <BottomNav />

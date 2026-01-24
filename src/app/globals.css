@@ -83,7 +83,17 @@ html {
 }
 
 /* iOS Safe Area Support */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
+@supports (padding: env(safe-area-inset-top)) {
+  /* Top safe area for notch/Dynamic Island */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .top-safe {
+    top: env(safe-area-inset-top);
+  }
+
+  /* Bottom safe area for home indicator */
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
   }
@@ -91,6 +101,37 @@ html {
   .bottom-nav-safe {
     padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
   }
+
+  /* Header with safe area */
+  .header-safe {
+    padding-top: calc(1rem + env(safe-area-inset-top));
+  }
+
+  /* Full safe area wrapper */
+  .safe-area-wrapper {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* iOS Native App Styles */
+html {
+  /* Prevent overscroll bounce showing white background */
+  background: var(--background);
+}
+
+/* Ensure full viewport coverage */
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+#__next, main {
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Touch-friendly tap targets */

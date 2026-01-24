@@ -5,6 +5,56 @@ import { Button } from '@/components/ui';
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
+      {/* Mobile App Hero - Shows on small screens */}
+      <div className="lg:hidden min-h-screen flex flex-col pt-safe">
+        {/* Logo Header */}
+        <div className="px-6 py-8">
+          <div className="flex items-center gap-3">
+            <Moon className="w-10 h-10 text-primary" />
+            <span className="text-2xl font-bold text-text-primary">Recover</span>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col justify-center px-6 pb-12">
+          <h1 className="text-4xl font-bold text-text-primary mb-4 leading-tight">
+            Sleep better.
+            <br />
+            <span className="text-primary">Perform better.</span>
+          </h1>
+          <p className="text-lg text-text-secondary mb-8">
+            Track your sleep and wake up knowing exactly how ready you are for the day.
+          </p>
+
+          {/* Recovery Score Preview */}
+          <div className="bg-card rounded-2xl border border-border p-6 mb-8">
+            <p className="text-text-muted text-xs uppercase tracking-wide mb-2 text-center">
+              Your Recovery Score
+            </p>
+            <div className="text-6xl font-bold text-success text-center mb-1">87</div>
+            <p className="text-text-primary text-center font-medium">Fully Recovered</p>
+          </div>
+
+          {/* CTA Buttons */}
+          <div className="space-y-3">
+            <Link href="/signup" className="block">
+              <Button size="lg" className="w-full">
+                Get Started
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
+            <Link href="/login" className="block">
+              <Button variant="outline" size="lg" className="w-full">
+                Log In
+              </Button>
+            </Link>
+          </div>
+          <p className="text-text-muted text-sm text-center mt-4">Free to use. No credit card required.</p>
+        </div>
+      </div>
+
+      {/* Desktop Landing Page - Hidden on mobile */}
+      <div className="hidden lg:block">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -273,6 +323,7 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }

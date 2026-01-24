@@ -13,6 +13,8 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  CloudSun,
+  Lightbulb,
 } from 'lucide-react';
 import { Button, useToast } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
@@ -114,15 +116,17 @@ export default function SleepLogPage() {
 
   // Get initial date from URL params or default to yesterday
   const initialDate = searchParams.get('date') || getYesterdayDate();
+  const initialIsNap = searchParams.get('nap') === 'true';
 
   // Form state
   const [date, setDate] = useState(initialDate);
-  const [bedtime, setBedtime] = useState('22:30');
-  const [wakeTime, setWakeTime] = useState('06:30');
+  const [bedtime, setBedtime] = useState(initialIsNap ? '14:00' : '22:30');
+  const [wakeTime, setWakeTime] = useState(initialIsNap ? '14:30' : '06:30');
   const [quality, setQuality] = useState(3);
   const [energy, setEnergy] = useState(3);
   const [interruptions, setInterruptions] = useState(0);
   const [notes, setNotes] = useState('');
+  const [isNap, setIsNap] = useState(initialIsNap);
 
   // Load existing log data when date changes
   useEffect(() => {
@@ -132,11 +136,13 @@ export default function SleepLogPage() {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
+        // Query by date AND is_nap to get the correct log type
         const { data } = await supabase
           .from('sleep_logs')
           .select('*')
           .eq('user_id', user.id)
           .eq('date', date)
+          .eq('is_nap', initialIsNap)
           .single();
 
         if (data) {
@@ -154,15 +160,17 @@ export default function SleepLogPage() {
           setEnergy(data.energy);
           setInterruptions(data.interruptions);
           setNotes(data.notes || '');
+          setIsNap(data.is_nap || false);
         } else {
           setExistingLog(false);
-          // Reset to defaults for new log
-          setBedtime('22:30');
-          setWakeTime('06:30');
+          // Reset to defaults for new log (keep isNap from URL param)
+          setBedtime(initialIsNap ? '14:00' : '22:30');
+          setWakeTime(initialIsNap ? '14:30' : '06:30');
           setQuality(3);
           setEnergy(3);
           setInterruptions(0);
           setNotes('');
+          setIsNap(initialIsNap);
         }
       }
       setIsLoadingData(false);
@@ -238,17 +246,20 @@ export default function SleepLogPage() {
         bedtime: bedDate.toISOString(),
         wake_time: wakeDate.toISOString(),
         duration_minutes: durationMinutes,
-        quality,
-        energy,
-        interruptions,
-        notes: notes.trim() || null,
+        // For naps: use neutral defaults since these fields aren't shown
+        quality: isNap ? 3 : quality,
+        energy: isNap ? 3 : energy,
+        interruptions: isNap ? 0 : interruptions,
+        notes: isNap ? null : (notes.trim() || null),
+        is_nap: isNap,
       };
 
       // Upsert (insert or update if exists)
+      // Constraint is now on (user_id, date, is_nap) to allow one sleep + one nap per date
       const { error: upsertError } = await supabase
         .from('sleep_logs')
         .upsert(logData, {
-          onConflict: 'user_id,date',
+          onConflict: 'user_id,date,is_nap',
           ignoreDuplicates: false
         });
 
@@ -291,7 +302,7 @@ export default function SleepLogPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-10">
+      <header className="bg-card border-b border-border sticky top-0 z-10 pt-safe">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center">
           <Link
             href={existingLog ? "/dashboard/history" : "/dashboard"}
@@ -301,7 +312,7 @@ export default function SleepLogPage() {
           </Link>
           <div>
             <h1 className="text-lg font-semibold text-text-primary">
-              {existingLog ? 'Edit Sleep Log' : 'Log Sleep'}
+              {existingLog ? (isNap ? 'Edit Nap' : 'Edit Sleep Log') : (isNap ? 'Log Nap' : 'Log Sleep')}
             </h1>
             {existingLog && (
               <p className="text-xs text-text-muted">Editing existing entry</p>
@@ -342,6 +353,40 @@ export default function SleepLogPage() {
             </button>
           </div>
         </div>
+
+        {/* Nap toggle */}
+        <button
+          type="button"
+          onClick={() => setIsNap(!isNap)}
+          className={`w-full flex items-center justify-between p-4 rounded-xl border mb-6 transition-all ${
+            isNap
+              ? 'border-warning bg-warning/10'
+              : 'border-border bg-card hover:bg-card-hover'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+              isNap ? 'bg-warning/20' : 'bg-background'
+            }`}>
+              <CloudSun className={`w-5 h-5 ${isNap ? 'text-warning' : 'text-text-muted'}`} />
+            </div>
+            <div className="text-left">
+              <p className={`font-medium ${isNap ? 'text-warning' : 'text-text-primary'}`}>
+                {isNap ? 'This is a nap' : 'Is this a nap?'}
+              </p>
+              <p className="text-sm text-text-secondary">
+                {isNap ? 'Naps won\'t affect your bedtime insights' : 'Toggle if logging a daytime nap'}
+              </p>
+            </div>
+          </div>
+          <div className={`w-12 h-7 rounded-full transition-colors ${
+            isNap ? 'bg-warning' : 'bg-border'
+          }`}>
+            <div className={`w-5 h-5 bg-white rounded-full m-1 transition-transform ${
+              isNap ? 'translate-x-5' : 'translate-x-0'
+            }`} />
+          </div>
+        </button>
 
         {/* Error message */}
         {error && (
@@ -385,58 +430,96 @@ export default function SleepLogPage() {
 
             {/* Duration display */}
             <div className="bg-background rounded-lg p-3 text-center">
-              <p className="text-sm text-text-secondary mb-1">Total sleep</p>
-              <p className="text-2xl font-bold text-text-primary">
+              <p className="text-sm text-text-secondary mb-1">{isNap ? 'Nap duration' : 'Total sleep'}</p>
+              <p className={`text-2xl font-bold ${isNap && durationMinutes > 60 ? 'text-warning' : 'text-text-primary'}`}>
                 {durationHours}h {durationMins > 0 ? `${durationMins}m` : ''}
               </p>
+              {isNap && durationMinutes > 60 && (
+                <p className="text-xs text-warning mt-1">Naps over 60 min may affect night sleep</p>
+              )}
             </div>
+
+            {/* Smart Alarm Suggestion - only for night sleep */}
+            {!isNap && durationMinutes >= 300 && (
+              <div className="mt-4 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Lightbulb className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-text-primary">Smart Alarm Tip</p>
+                    <p className="text-sm text-text-secondary">
+                      Set your alarm for {(() => {
+                        // Calculate 30-min window ending at wake time
+                        const [h, m] = wakeTime.split(':').map(Number);
+                        const wakeMinutes = h * 60 + m;
+                        const startMinutes = wakeMinutes - 30;
+                        const startH = Math.floor(startMinutes / 60) % 24;
+                        const startM = startMinutes % 60;
+                        const startMeridian = startH >= 12 ? 'PM' : 'AM';
+                        const endMeridian = h >= 12 ? 'PM' : 'AM';
+                        const displayStartH = startH > 12 ? startH - 12 : startH === 0 ? 12 : startH;
+                        const displayEndH = h > 12 ? h - 12 : h === 0 ? 12 : h;
+                        return `${displayStartH}:${startM.toString().padStart(2, '0')} ${startMeridian} - ${displayEndH}:${m.toString().padStart(2, '0')} ${endMeridian}`;
+                      })()} to wake during light sleep.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Quality rating */}
-          <div className="bg-card rounded-xl border border-border p-4">
-            <RatingSelector
-              label="Sleep Quality"
-              value={quality}
-              onChange={setQuality}
-              icon={Star}
-              color="text-primary"
-            />
-          </div>
+          {/* Quality, Energy, Interruptions, Notes - only for night sleep */}
+          {!isNap && (
+            <>
+              {/* Quality rating */}
+              <div className="bg-card rounded-xl border border-border p-4">
+                <RatingSelector
+                  label="Sleep Quality"
+                  value={quality}
+                  onChange={setQuality}
+                  icon={Star}
+                  color="text-primary"
+                />
+              </div>
 
-          {/* Energy rating */}
-          <div className="bg-card rounded-xl border border-border p-4">
-            <RatingSelector
-              label="Morning Energy"
-              value={energy}
-              onChange={setEnergy}
-              icon={Zap}
-              color="text-success"
-            />
-          </div>
+              {/* Energy rating */}
+              <div className="bg-card rounded-xl border border-border p-4">
+                <RatingSelector
+                  label="Morning Energy"
+                  value={energy}
+                  onChange={setEnergy}
+                  icon={Zap}
+                  color="text-success"
+                />
+              </div>
 
-          {/* Interruptions */}
-          <div className="bg-card rounded-xl border border-border p-4">
-            <InterruptionsSelector value={interruptions} onChange={setInterruptions} />
-          </div>
+              {/* Interruptions */}
+              <div className="bg-card rounded-xl border border-border p-4">
+                <InterruptionsSelector value={interruptions} onChange={setInterruptions} />
+              </div>
 
-          {/* Notes */}
-          <div className="bg-card rounded-xl border border-border p-4">
-            <label className="block text-sm font-medium text-text-primary mb-2">
-              Notes (optional)
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Anything that affected your sleep? Dreams, stress, late meal..."
-              rows={3}
-              className="w-full bg-background border border-border rounded-lg py-2.5 px-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none"
-            />
-          </div>
+              {/* Notes */}
+              <div className="bg-card rounded-xl border border-border p-4">
+                <label className="block text-sm font-medium text-text-primary mb-2">
+                  Notes (optional)
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Anything that affected your sleep? Dreams, stress, late meal..."
+                  rows={3}
+                  className="w-full bg-background border border-border rounded-lg py-2.5 px-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none"
+                />
+              </div>
+            </>
+          )}
 
           {/* Submit button */}
           <Button type="submit" className="w-full" size="lg" isLoading={isLoading}>
             <Check className="w-5 h-5 mr-2" />
-            {existingLog ? 'Update Sleep Log' : 'Save Sleep Log'}
+            {isNap
+              ? (existingLog ? 'Update Nap' : 'Save Nap')
+              : (existingLog ? 'Update Sleep Log' : 'Save Sleep Log')
+            }
           </Button>
         </form>
       </main>

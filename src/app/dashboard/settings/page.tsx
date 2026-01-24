@@ -126,7 +126,7 @@ export default async function SettingsPage() {
       </Suspense>
 
       {/* Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-10">
+      <header className="bg-card border-b border-border sticky top-0 z-10 pt-safe">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <h1 className="text-lg font-semibold text-text-primary">Profile</h1>
         </div>

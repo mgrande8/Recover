@@ -378,7 +378,7 @@ export function SleepTimingChart({ sleepLogs }: { sleepLogs: SleepLog[] }) {
 export function SleepConsistencyCard({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: Profile }) {
   if (sleepLogs.length < 7) return null;
 
-  // Calculate bedtime consistency (standard deviation of bedtimes)
+  // Calculate bedtime consistency (standard deviation of bedtimes in hours)
   const bedtimes = sleepLogs.slice(0, 7).map((log) => {
     const bedtime = new Date(log.bedtime);
     let hour = bedtime.getHours() + bedtime.getMinutes() / 60;
@@ -388,23 +388,23 @@ export function SleepConsistencyCard({ sleepLogs, profile }: { sleepLogs: SleepL
 
   const avgBedtime = bedtimes.reduce((a, b) => a + b, 0) / bedtimes.length;
   const variance = bedtimes.reduce((sum, bt) => sum + Math.pow(bt - avgBedtime, 2), 0) / bedtimes.length;
-  const stdDev = Math.sqrt(variance);
+  const stdDev = Math.sqrt(variance); // Standard deviation in hours
 
-  // Calculate duration consistency
+  // Calculate duration consistency (standard deviation in hours)
   const durations = sleepLogs.slice(0, 7).map((log) => log.duration_minutes / 60);
   const avgDuration = durations.reduce((a, b) => a + b, 0) / durations.length;
   const durationVariance = durations.reduce((sum, d) => sum + Math.pow(d - avgDuration, 2), 0) / durations.length;
   const durationStdDev = Math.sqrt(durationVariance);
 
-  // Calculate consistency score (100 - penalty for variation)
-  const timingPenalty = Math.min(stdDev * 10, 30);
-  const durationPenalty = Math.min(durationStdDev * 10, 20);
-  const consistencyScore = Math.max(0, Math.round(100 - timingPenalty - durationPenalty));
+  // Calculate consistency score using combined standard deviation
+  // Formula: consistency_score = 100 - (stdDev_hours * 20), capped 0-100
+  const combinedStdDev = (stdDev + durationStdDev) / 2;
+  const consistencyScore = Math.max(0, Math.min(100, Math.round(100 - combinedStdDev * 20)));
 
+  // Color coding: >85% green, >70% yellow, <70% red
   const getConsistencyLevel = (score: number) => {
-    if (score >= 80) return { label: 'Excellent', color: 'text-success', bg: 'bg-success' };
-    if (score >= 60) return { label: 'Good', color: 'text-primary', bg: 'bg-primary' };
-    if (score >= 40) return { label: 'Fair', color: 'text-warning', bg: 'bg-warning' };
+    if (score > 85) return { label: 'Excellent', color: 'text-success', bg: 'bg-success' };
+    if (score > 70) return { label: 'Good', color: 'text-warning', bg: 'bg-warning' };
     return { label: 'Needs Work', color: 'text-danger', bg: 'bg-danger' };
   };
 

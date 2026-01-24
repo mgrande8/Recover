@@ -62,7 +62,7 @@ export default function SignUpPage() {
   // Success state - show confirmation message
   if (success) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4 pt-safe pb-safe">
         <div className="max-w-md w-full">
           <div className="bg-card rounded-2xl border border-border p-8 text-center">
             <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -88,7 +88,7 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 pt-safe pb-safe">
       <div className="max-w-md w-full">
         {/* Back to home link */}
         <Link

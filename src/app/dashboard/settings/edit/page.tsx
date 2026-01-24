@@ -22,6 +22,7 @@ import {
   Lock,
   Eye,
   EyeOff,
+  Smartphone,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
@@ -58,6 +59,7 @@ export default function EditSettingsPage() {
   const [sleepGoal, setSleepGoal] = useState(7.5);
 
   // Notification preferences state
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(true);
   const [emailWeeklySummary, setEmailWeeklySummary] = useState(true);
   const [emailStreakCelebrations, setEmailStreakCelebrations] = useState(true);
   const [emailReminders, setEmailReminders] = useState(true);
@@ -96,6 +98,7 @@ export default function EditSettingsPage() {
           setWakeTime(profile.typical_wake_time || '06:30');
           setSleepGoal(profile.sleep_goal_hours || 7.5);
           // Load notification preferences
+          setPushNotificationsEnabled(profile.push_notifications_enabled ?? true);
           setEmailWeeklySummary(profile.email_weekly_summary ?? true);
           setEmailStreakCelebrations(profile.email_streak_celebrations ?? true);
           setEmailReminders(profile.email_reminders ?? true);
@@ -131,6 +134,7 @@ export default function EditSettingsPage() {
           typical_bedtime: bedtime,
           typical_wake_time: wakeTime,
           sleep_goal_hours: sleepGoal,
+          push_notifications_enabled: pushNotificationsEnabled,
           email_weekly_summary: emailWeeklySummary,
           email_streak_celebrations: emailStreakCelebrations,
           email_reminders: emailReminders,
@@ -215,7 +219,7 @@ export default function EditSettingsPage() {
   return (
     <div className="min-h-screen bg-background pb-8">
       {/* Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-10">
+      <header className="bg-card border-b border-border sticky top-0 z-10 pt-safe">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center">
           <Link
             href="/dashboard/settings"
@@ -373,6 +377,29 @@ export default function EditSettingsPage() {
           </div>
 
           <div className="space-y-4">
+            {/* Push Notifications */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Smartphone className="w-4 h-4 text-text-muted" />
+                <div>
+                  <p className="text-sm text-text-primary">Push Notifications</p>
+                  <p className="text-xs text-text-muted">Enable notifications on this device</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setPushNotificationsEnabled(!pushNotificationsEnabled)}
+                className={`relative w-11 h-6 rounded-full transition-colors ${
+                  pushNotificationsEnabled ? 'bg-primary' : 'bg-border'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                    pushNotificationsEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
             {/* Weekly Summary */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

@@ -22,6 +22,9 @@ import {
   Smartphone,
   Sun,
   User,
+  UtensilsCrossed,
+  Thermometer,
+  BedDouble,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { calculateRecoveryScore, formatDuration } from '@/lib/utils';
@@ -103,8 +106,14 @@ function SleepDebtTracker({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profi
   let totalDebt = 0;
 
   recentLogs.forEach((log) => {
-    const diff = log.duration_minutes - goalMinutes;
-    totalDebt += diff;
+    if (log.is_nap) {
+      // Naps always ADD to sleep bank (no goal subtraction)
+      totalDebt += log.duration_minutes;
+    } else {
+      // Night sleep: compare against goal
+      const diff = log.duration_minutes - goalMinutes;
+      totalDebt += diff;
+    }
   });
 
   // Convert to hours
@@ -151,7 +160,11 @@ function normalizeDate(dateStr: string): string {
 
 // Correlation Analysis (Pro Feature)
 function CorrelationAnalysis({ sleepLogs, checklistLogs, profile }: { sleepLogs: SleepLog[]; checklistLogs: ChecklistLog[]; profile: Profile }) {
-  if (checklistLogs.length < 5) {
+  const requiredChecklists = 5;
+  const currentCount = checklistLogs.length;
+  const progress = Math.min(currentCount / requiredChecklists, 1);
+
+  if (currentCount < requiredChecklists) {
     return (
       <div className="bg-card rounded-xl border border-border p-4">
         <div className="flex items-start gap-4">
@@ -165,7 +178,18 @@ function CorrelationAnalysis({ sleepLogs, checklistLogs, profile }: { sleepLogs:
                 PRO
               </span>
             </div>
-            <p className="text-sm text-text-muted">Log your pre-sleep checklist for at least 5 days to see correlations.</p>
+            <p className="text-sm text-text-primary font-medium mb-2">
+              🎯 {requiredChecklists - currentCount} more night{requiredChecklists - currentCount === 1 ? "'s" : "s'"} checklist to unlock!
+            </p>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-2 bg-background rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${progress * 100}%` }}
+                />
+              </div>
+              <span className="text-xs text-text-muted font-medium">{currentCount}/{requiredChecklists}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -173,11 +197,16 @@ function CorrelationAnalysis({ sleepLogs, checklistLogs, profile }: { sleepLogs:
   }
 
   // Calculate correlations between checklist items and sleep quality
+  // Now analyzing ALL 8 habits for complete correlation insights
   const checklistItems = [
     { key: 'exercised', label: 'Exercise', icon: Dumbbell },
     { key: 'no_caffeine_after_2pm', label: 'No late caffeine', icon: Coffee },
     { key: 'no_alcohol', label: 'No alcohol', icon: Wine },
+    { key: 'no_heavy_meal', label: 'Light dinner', icon: UtensilsCrossed },
+    { key: 'room_dark', label: 'Dark room', icon: Moon },
+    { key: 'room_cool', label: 'Cool room', icon: Thermometer },
     { key: 'screens_off_30min', label: 'No screens', icon: Smartphone },
+    { key: 'phone_not_in_bed', label: 'Phone away', icon: BedDouble },
   ];
 
   const correlations = checklistItems.map((item) => {
@@ -268,7 +297,13 @@ function CorrelationAnalysis({ sleepLogs, checklistLogs, profile }: { sleepLogs:
 
 // Optimal Bedtime Calculator (Pro Feature)
 function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: Profile }) {
-  if (sleepLogs.length < 7) {
+  const requiredLogs = 7;
+  // Filter out naps for this calculation
+  const nightSleepLogs = sleepLogs.filter((log) => !log.is_nap);
+  const currentCount = nightSleepLogs.length;
+  const progress = Math.min(currentCount / requiredLogs, 1);
+
+  if (currentCount < requiredLogs) {
     return (
       <div className="bg-card rounded-xl border border-border p-4">
         <div className="flex items-start gap-4">
@@ -282,7 +317,18 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
                 PRO
               </span>
             </div>
-            <p className="text-sm text-text-muted">Log at least 7 nights to calculate your optimal bedtime.</p>
+            <p className="text-sm text-text-primary font-medium mb-2">
+              🎯 {requiredLogs - currentCount} more {requiredLogs - currentCount === 1 ? 'night' : 'nights'} to unlock!
+            </p>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-2 bg-background rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-warning transition-all duration-300"
+                  style={{ width: `${progress * 100}%` }}
+                />
+              </div>
+              <span className="text-xs text-text-muted font-medium">{currentCount}/{requiredLogs}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -296,8 +342,10 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
   if (typicalBedtimeHour < 12) typicalBedtimeHour += 24;
 
   // Find bedtimes that resulted in best quality sleep
+  // Exclude naps - they shouldn't affect optimal bedtime calculation
   // Filter to only include reasonable bedtimes (6 PM to 3 AM, normalized as 18-27)
   const bedtimeQuality = sleepLogs
+    .filter((log) => !log.is_nap) // Exclude naps from bedtime analysis
     .map((log) => {
       const bedtime = new Date(log.bedtime);
       let hour = bedtime.getHours() + bedtime.getMinutes() / 60;
@@ -317,6 +365,7 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
 
   if (bedtimeQuality.length < 5) {
     // Not enough reasonable bedtime data
+    const needed = 5 - bedtimeQuality.length;
     return (
       <div className="bg-card rounded-xl border border-border p-4">
         <div className="flex items-start gap-4">
@@ -330,7 +379,10 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
                 PRO
               </span>
             </div>
-            <p className="text-sm text-text-muted">Need more data with regular bedtimes (6 PM - 3 AM) to calculate your optimal bedtime.</p>
+            <p className="text-sm text-text-primary font-medium mb-1">
+              🎯 {needed} more regular {needed === 1 ? 'night' : 'nights'} needed
+            </p>
+            <p className="text-xs text-text-muted">Log sleep with bedtimes between 6 PM - 3 AM for best results.</p>
           </div>
         </div>
       </div>
@@ -800,7 +852,7 @@ export default async function InsightsPage() {
   return (
     <div className="min-h-screen bg-background pb-8">
       {/* Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-10">
+      <header className="bg-card border-b border-border sticky top-0 z-10 pt-safe">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center">
             <Link

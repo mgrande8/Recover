@@ -17,6 +17,7 @@ export interface Profile {
   email_weekly_summary: boolean;
   email_streak_celebrations: boolean;
   email_reminders: boolean;
+  push_notifications_enabled: boolean;
   reminder_time: string; // TIME format "HH:MM"
   created_at: string;
   updated_at: string;
@@ -58,6 +59,7 @@ export interface SleepLog {
   energy: number; // 1-5
   interruptions: number; // 0, 1, 2, 3+
   notes: string | null;
+  is_nap: boolean; // true for naps, false for night sleep
   created_at: string;
 }
 
@@ -95,6 +97,7 @@ export interface SleepLogInput {
   energy: number;
   interruptions: number;
   notes?: string;
+  is_nap?: boolean;
 }
 
 export interface ChecklistInput {

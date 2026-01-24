@@ -122,7 +122,7 @@ export default function UpgradePage() {
     return (
       <div className="min-h-screen bg-background">
         {/* Header */}
-        <header className="bg-card border-b border-border sticky top-0 z-10">
+        <header className="bg-card border-b border-border sticky top-0 z-10 pt-safe">
           <div className="max-w-lg mx-auto px-4 py-4 flex items-center">
             <Link
               href="/dashboard/settings"
@@ -190,7 +190,7 @@ export default function UpgradePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-10">
+      <header className="bg-card border-b border-border sticky top-0 z-10 pt-safe">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center">
           <Link
             href="/dashboard/settings"

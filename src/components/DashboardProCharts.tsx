@@ -60,7 +60,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 // Mini Recovery Score Chart
 function MiniRecoveryChart({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: Profile }) {
-  const data = sleepLogs
+  // Filter out naps - recovery scores are for night sleep only
+  const nightLogs = sleepLogs.filter((log) => !log.is_nap);
+  const data = nightLogs
     .slice(0, 7)
     .reverse()
     .map((log) => ({
@@ -99,7 +101,9 @@ function MiniRecoveryChart({ sleepLogs, profile }: { sleepLogs: SleepLog[]; prof
 
 // Mini Duration Chart
 function MiniDurationChart({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: Profile }) {
-  const data = sleepLogs
+  // Filter out naps - duration chart is for night sleep only
+  const nightLogs = sleepLogs.filter((log) => !log.is_nap);
+  const data = nightLogs
     .slice(0, 7)
     .reverse()
     .map((log) => ({
@@ -155,7 +159,13 @@ function SleepDebtMini({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile:
   let totalDebt = 0;
 
   recentLogs.forEach((log) => {
-    totalDebt += log.duration_minutes - goalMinutes;
+    if (log.is_nap) {
+      // Naps always ADD to sleep bank (no goal subtraction)
+      totalDebt += log.duration_minutes;
+    } else {
+      // Night sleep: compare against goal
+      totalDebt += log.duration_minutes - goalMinutes;
+    }
   });
 
   const debtHours = Math.abs(totalDebt) / 60;

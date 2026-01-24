@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { Moon, History, User, Clock, Star, Zap, AlertCircle, FileText, Pencil } from 'lucide-react';
+import { Moon, History, User, Clock, Star, Zap, AlertCircle, FileText, Pencil, CloudSun, Plus } from 'lucide-react';
+import { Button } from '@/components/ui';
 import {
   calculateRecoveryScore,
   formatDuration,
@@ -45,17 +46,21 @@ function BottomNav() {
 
 // Stats summary component
 function StatsSummary({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: Profile }) {
-  if (sleepLogs.length === 0) return null;
+  // Filter out naps for stats - only show night sleep averages
+  const nightLogs = sleepLogs.filter((log) => !log.is_nap);
+  const napCount = sleepLogs.length - nightLogs.length;
 
-  const scores = sleepLogs.map((log) => calculateRecoveryScore(log, profile).score);
+  if (nightLogs.length === 0) return null;
+
+  const scores = nightLogs.map((log) => calculateRecoveryScore(log, profile).score);
   const avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
 
   const avgDuration = Math.round(
-    sleepLogs.reduce((acc, log) => acc + log.duration_minutes, 0) / sleepLogs.length
+    nightLogs.reduce((acc, log) => acc + log.duration_minutes, 0) / nightLogs.length
   );
 
   const avgQuality =
-    (sleepLogs.reduce((acc, log) => acc + log.quality, 0) / sleepLogs.length).toFixed(1);
+    (nightLogs.reduce((acc, log) => acc + log.quality, 0) / nightLogs.length).toFixed(1);
 
   return (
     <div className="grid grid-cols-3 gap-3 mb-6">
@@ -81,53 +86,68 @@ function SleepLogCard({ log, profile }: { log: SleepLog; profile: Profile }) {
   const colorClass = getRecoveryColor(recovery.level);
 
   return (
-    <Link href={`/dashboard/log?date=${log.date}`} className="block">
+    <Link href={`/dashboard/log?date=${log.date}${log.is_nap ? '&nap=true' : ''}`} className="block">
       <div className="bg-card rounded-xl border border-border p-4 hover:bg-card-hover hover:border-primary/30 transition-all group">
         <div className="flex items-start justify-between mb-3">
           <div>
             <div className="flex items-center gap-2">
               <p className="font-semibold text-text-primary">{formatDate(log.date)}</p>
+              {log.is_nap && (
+                <span className="inline-flex items-center gap-1 text-xs bg-warning/10 text-warning px-2 py-0.5 rounded-full">
+                  <CloudSun className="w-3 h-3" />
+                  Nap
+                </span>
+              )}
               <Pencil className="w-3.5 h-3.5 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <p className="text-sm text-text-secondary">{recovery.message.split('—')[0].trim()}</p>
-          </div>
-          <div className={`text-3xl font-bold ${colorClass}`}>{recovery.score}</div>
-        </div>
-
-        <div className="grid grid-cols-4 gap-2 text-center">
-          <div className="bg-background rounded-lg py-2">
-            <div className="flex items-center justify-center mb-1">
-              <Clock className="w-3.5 h-3.5 text-text-muted" />
-            </div>
-            <p className="text-sm font-medium text-text-primary">
-              {formatDuration(log.duration_minutes)}
+            <p className="text-sm text-text-secondary">
+              {log.is_nap ? `${formatDuration(log.duration_minutes)} nap` : recovery.message.split('—')[0].trim()}
             </p>
-            <p className="text-[10px] text-text-muted">Duration</p>
           </div>
-          <div className="bg-background rounded-lg py-2">
-            <div className="flex items-center justify-center mb-1">
-              <Star className="w-3.5 h-3.5 text-text-muted" />
-            </div>
-            <p className="text-sm font-medium text-text-primary">{log.quality}/5</p>
-            <p className="text-[10px] text-text-muted">Quality</p>
-          </div>
-          <div className="bg-background rounded-lg py-2">
-            <div className="flex items-center justify-center mb-1">
-              <Zap className="w-3.5 h-3.5 text-text-muted" />
-            </div>
-            <p className="text-sm font-medium text-text-primary">{log.energy}/5</p>
-            <p className="text-[10px] text-text-muted">Energy</p>
-          </div>
-          <div className="bg-background rounded-lg py-2">
-            <div className="flex items-center justify-center mb-1">
-              <AlertCircle className="w-3.5 h-3.5 text-text-muted" />
-            </div>
-            <p className="text-sm font-medium text-text-primary">{log.interruptions}</p>
-            <p className="text-[10px] text-text-muted">Wake-ups</p>
-          </div>
+          {/* Only show recovery score for night sleep */}
+          {!log.is_nap && (
+            <div className={`text-3xl font-bold ${colorClass}`}>{recovery.score}</div>
+          )}
         </div>
 
-        {log.notes && (
+        {/* Stats grid - only for night sleep */}
+        {!log.is_nap && (
+          <div className="grid grid-cols-4 gap-2 text-center">
+            <div className="bg-background rounded-lg py-2">
+              <div className="flex items-center justify-center mb-1">
+                <Clock className="w-3.5 h-3.5 text-text-muted" />
+              </div>
+              <p className="text-sm font-medium text-text-primary">
+                {formatDuration(log.duration_minutes)}
+              </p>
+              <p className="text-[10px] text-text-muted">Duration</p>
+            </div>
+            <div className="bg-background rounded-lg py-2">
+              <div className="flex items-center justify-center mb-1">
+                <Star className="w-3.5 h-3.5 text-text-muted" />
+              </div>
+              <p className="text-sm font-medium text-text-primary">{log.quality}/5</p>
+              <p className="text-[10px] text-text-muted">Quality</p>
+            </div>
+            <div className="bg-background rounded-lg py-2">
+              <div className="flex items-center justify-center mb-1">
+                <Zap className="w-3.5 h-3.5 text-text-muted" />
+              </div>
+              <p className="text-sm font-medium text-text-primary">{log.energy}/5</p>
+              <p className="text-[10px] text-text-muted">Energy</p>
+            </div>
+            <div className="bg-background rounded-lg py-2">
+              <div className="flex items-center justify-center mb-1">
+                <AlertCircle className="w-3.5 h-3.5 text-text-muted" />
+              </div>
+              <p className="text-sm font-medium text-text-primary">{log.interruptions}</p>
+              <p className="text-[10px] text-text-muted">Wake-ups</p>
+            </div>
+          </div>
+        )}
+
+        {/* Notes - only for night sleep */}
+        {!log.is_nap && log.notes && (
           <div className="mt-3 pt-3 border-t border-border">
             <div className="flex items-start gap-2">
               <FileText className="w-4 h-4 text-text-muted mt-0.5 flex-shrink-0" />
@@ -176,16 +196,36 @@ export default async function HistoryPage() {
     .limit(30);
 
   const hasLogs = sleepLogs && sleepLogs.length > 0;
+  const nightCount = sleepLogs?.filter((log) => !log.is_nap).length || 0;
+  const napCount = sleepLogs?.filter((log) => log.is_nap).length || 0;
 
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className="bg-card border-b border-border sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <h1 className="text-lg font-semibold text-text-primary">Sleep History</h1>
-          <p className="text-sm text-text-secondary">
-            {hasLogs ? `${sleepLogs.length} nights logged` : 'No sleep logs yet'}
-          </p>
+      <header className="bg-card border-b border-border sticky top-0 z-10 pt-safe">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-semibold text-text-primary">Sleep History</h1>
+            <p className="text-sm text-text-secondary">
+              {hasLogs
+                ? `${nightCount} ${nightCount === 1 ? 'night' : 'nights'}${napCount > 0 ? ` + ${napCount} ${napCount === 1 ? 'nap' : 'naps'}` : ''} logged`
+                : 'No sleep logs yet'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href="/dashboard/log?nap=true">
+              <Button size="sm" variant="outline">
+                <CloudSun className="w-4 h-4 mr-1" />
+                Nap
+              </Button>
+            </Link>
+            <Link href="/dashboard/log">
+              <Button size="sm">
+                <Plus className="w-4 h-4 mr-1" />
+                Sleep
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 

@@ -4,29 +4,32 @@ import { useEffect } from 'react';
 
 export function ServiceWorkerRegistration() {
   useEffect(() => {
-    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((registration) => {
-          console.log('Service Worker registered with scope:', registration.scope);
+    // Wait a bit for Capacitor to initialize, then check platform
+    const timer = setTimeout(() => {
+      // Check if Capacitor native bridge is available
+      const isNative = typeof window !== 'undefined' &&
+        (window as any).Capacitor?.isNativePlatform?.() === true;
 
-          // Check for updates
-          registration.addEventListener('updatefound', () => {
-            const newWorker = registration.installing;
-            if (newWorker) {
-              newWorker.addEventListener('statechange', () => {
-                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New content is available, notify user if needed
-                  console.log('New content available, refresh to update.');
-                }
-              });
-            }
+      if (isNative) {
+        console.log('[SW] Native platform detected, skipping Service Worker');
+        return;
+      }
+
+      // Only register on web in production
+      if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+        navigator.serviceWorker
+          .register('/sw.js')
+          .then((registration) => {
+            console.log('[SW] Service Worker registered:', registration.scope);
+          })
+          .catch((error) => {
+            // Silently fail - not critical for the app
+            console.log('[SW] Service Worker not available');
           });
-        })
-        .catch((error) => {
-          console.error('Service Worker registration failed:', error);
-        });
-    }
+      }
+    }, 1000); // Wait 1 second for Capacitor to initialize
+
+    return () => clearTimeout(timer);
   }, []);
 
   return null;

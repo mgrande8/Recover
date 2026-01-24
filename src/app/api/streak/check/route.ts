@@ -2,10 +2,9 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { createStreakNotification } from '@/lib/notifications';
-import { sendStreakCelebrationEmail } from '@/lib/email';
 
 // Milestone streaks that trigger celebrations
-const MILESTONE_STREAKS = [3, 7, 14, 30];
+const MILESTONE_STREAKS = [3, 7, 14, 30, 60, 90, 100, 365];
 
 export async function POST() {
   try {
@@ -51,27 +50,11 @@ export async function POST() {
       return NextResponse.json({ streak: currentStreak, milestone: false, already_notified: true });
     }
 
-    // Get user profile for notification preferences
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('email, email_streak_celebrations')
-      .eq('id', user.id)
-      .single();
-
-    // Create in-app notification
+    // Create in-app notification and send push notification
     try {
       await createStreakNotification(user.id, currentStreak);
     } catch (notificationError) {
       console.error('Failed to create streak notification:', notificationError);
-    }
-
-    // Send email if enabled
-    if (profile?.email_streak_celebrations !== false && profile?.email) {
-      try {
-        await sendStreakCelebrationEmail(profile.email, currentStreak);
-      } catch (emailError) {
-        console.error('Failed to send streak email:', emailError);
-      }
     }
 
     return NextResponse.json({
