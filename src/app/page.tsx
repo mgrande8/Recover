@@ -1,55 +1,186 @@
 import Link from 'next/link';
-import { Moon, TrendingUp, Zap, BarChart3, Star, Check, ArrowRight } from 'lucide-react';
+import { Moon, TrendingUp, Zap, BarChart3, Star, Check, ArrowRight, Flame, Target, Clock, Users } from 'lucide-react';
 import { Button } from '@/components/ui';
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile App Hero - Shows on small screens */}
-      <div className="lg:hidden min-h-screen flex flex-col pt-safe">
+      {/* Mobile App Landing - Shows on small screens */}
+      <div className="lg:hidden pt-safe pb-safe">
         {/* Logo Header */}
-        <div className="px-6 py-8">
-          <div className="flex items-center gap-3">
-            <Moon className="w-10 h-10 text-primary" />
-            <span className="text-2xl font-bold text-text-primary">Recover</span>
+        <div className="px-6 py-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Moon className="w-8 h-8 text-primary" />
+            <span className="text-xl font-bold text-text-primary">Recover</span>
           </div>
+          <Link href="/login" className="text-sm text-text-secondary">
+            Log in
+          </Link>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col justify-center px-6 pb-12">
+        {/* Hero Section */}
+        <div className="px-6 py-8">
           <h1 className="text-4xl font-bold text-text-primary mb-4 leading-tight">
             Sleep better.
             <br />
             <span className="text-primary">Perform better.</span>
           </h1>
-          <p className="text-lg text-text-secondary mb-8">
-            Track your sleep and wake up knowing exactly how ready you are for the day.
+          <p className="text-text-secondary mb-6">
+            Track your sleep, understand your patterns, and wake up knowing exactly how ready you are to crush the day.
           </p>
 
-          {/* Recovery Score Preview */}
-          <div className="bg-card rounded-2xl border border-border p-6 mb-8">
+          {/* CTA */}
+          <Link href="/signup" className="block mb-4">
+            <Button size="lg" className="w-full">
+              Start Tracking Free
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </Link>
+          <p className="text-text-muted text-xs text-center">No credit card required</p>
+        </div>
+
+        {/* Dashboard Preview */}
+        <div className="px-6 py-4">
+          <div className="bg-card rounded-2xl border border-border p-5 shadow-lg">
             <p className="text-text-muted text-xs uppercase tracking-wide mb-2 text-center">
               Your Recovery Score
             </p>
-            <div className="text-6xl font-bold text-success text-center mb-1">87</div>
-            <p className="text-text-primary text-center font-medium">Fully Recovered</p>
+            <div className="text-7xl font-bold text-success text-center mb-1">87</div>
+            <p className="text-text-primary text-center font-medium mb-1">Fully Recovered</p>
+            <p className="text-text-secondary text-center text-sm mb-4">Ready for high intensity</p>
+
+            {/* Mini Stats */}
+            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-border">
+              <div className="text-center">
+                <p className="text-lg font-bold text-text-primary">7h 45m</p>
+                <p className="text-xs text-text-muted">Sleep</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-text-primary">4/5</p>
+                <p className="text-xs text-text-muted">Quality</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-bold text-text-primary">5/5</p>
+                <p className="text-xs text-text-muted">Energy</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Social Proof */}
+        <div className="px-6 py-6 text-center">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <div className="flex -space-x-2">
+              <div className="w-8 h-8 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center">
+                <Users className="w-4 h-4 text-primary" />
+              </div>
+              <div className="w-8 h-8 rounded-full bg-success/20 border-2 border-background flex items-center justify-center text-xs font-bold text-success">1K+</div>
+            </div>
+          </div>
+          <p className="text-text-secondary text-sm">
+            Join <span className="text-text-primary font-semibold">1,000+ athletes</span> optimizing their sleep
+          </p>
+        </div>
+
+        {/* Feature Cards */}
+        <div className="px-6 py-4 space-y-3">
+          <h2 className="text-lg font-semibold text-text-primary mb-4">Why Recover?</h2>
+
+          <div className="bg-card rounded-xl border border-border p-4 flex items-start gap-4">
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <BarChart3 className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="font-medium text-text-primary">Track Sleep Patterns</p>
+              <p className="text-sm text-text-secondary">Log your sleep in seconds. See trends over time.</p>
+            </div>
           </div>
 
-          {/* CTA Buttons */}
-          <div className="space-y-3">
-            <Link href="/signup" className="block">
-              <Button size="lg" className="w-full">
-                Get Started
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </Link>
-            <Link href="/login" className="block">
-              <Button variant="outline" size="lg" className="w-full">
-                Log In
-              </Button>
-            </Link>
+          <div className="bg-card rounded-xl border border-border p-4 flex items-start gap-4">
+            <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Target className="w-5 h-5 text-success" />
+            </div>
+            <div>
+              <p className="font-medium text-text-primary">Personalized Insights</p>
+              <p className="text-sm text-text-secondary">Learn what helps you sleep better with AI-powered analysis.</p>
+            </div>
           </div>
-          <p className="text-text-muted text-sm text-center mt-4">Free to use. No credit card required.</p>
+
+          <div className="bg-card rounded-xl border border-border p-4 flex items-start gap-4">
+            <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Flame className="w-5 h-5 text-orange-500" />
+            </div>
+            <div>
+              <p className="font-medium text-text-primary">Build Sleep Streaks</p>
+              <p className="text-sm text-text-secondary">Stay motivated with daily logging streaks and milestones.</p>
+            </div>
+          </div>
+
+          <div className="bg-card rounded-xl border border-border p-4 flex items-start gap-4">
+            <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Zap className="w-5 h-5 text-warning" />
+            </div>
+            <div>
+              <p className="font-medium text-text-primary">Optimize Recovery</p>
+              <p className="text-sm text-text-secondary">Know when to push hard and when to rest for peak performance.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* What's Included */}
+        <div className="px-6 py-6">
+          <h2 className="text-lg font-semibold text-text-primary mb-4">Free Forever</h2>
+          <div className="space-y-3">
+            {[
+              'Unlimited sleep tracking',
+              'Daily Recovery Score',
+              'Pre-sleep checklist',
+              'Sleep history & trends',
+              'Streak tracking',
+            ].map((feature) => (
+              <div key={feature} className="flex items-center gap-3">
+                <Check className="w-5 h-5 text-success flex-shrink-0" />
+                <span className="text-text-primary">{feature}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Pro Teaser */}
+        <div className="px-6 py-4">
+          <div className="bg-gradient-to-br from-pro-accent/10 to-pro-accent/5 rounded-xl border border-pro-accent/20 p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Star className="w-4 h-4 text-pro-accent" />
+              <span className="text-pro-accent font-medium text-sm">Recover Pro</span>
+            </div>
+            <p className="text-text-secondary text-sm mb-2">
+              Unlock advanced insights, sleep debt tracking, and correlation analysis.
+            </p>
+            <p className="text-text-primary font-semibold">$4.99/month</p>
+          </div>
+        </div>
+
+        {/* Final CTA */}
+        <div className="px-6 py-8">
+          <Link href="/signup" className="block mb-4">
+            <Button size="lg" className="w-full">
+              Start Tracking Free
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </Link>
+          <p className="text-center text-text-secondary text-sm">
+            Already have an account?{' '}
+            <Link href="/login" className="text-primary font-medium">
+              Log in
+            </Link>
+          </p>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-6 border-t border-border text-center">
+          <p className="text-text-muted text-xs">
+            Sleep better. Perform better.
+          </p>
         </div>
       </div>
 
