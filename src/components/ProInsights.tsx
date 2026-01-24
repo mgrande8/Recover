@@ -119,7 +119,7 @@ export function SleepDurationChart({ sleepLogs, profile }: { sleepLogs: SleepLog
         <h3 className="font-semibold text-text-primary">Sleep Duration Trends</h3>
       </div>
       <div className="h-48">
-        <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={150}>
+        <ResponsiveContainer width="100%" height={192}>
           <AreaChart data={data}>
             <defs>
               <linearGradient id="durationGradient" x1="0" y1="0" x2="0" y2="1">
@@ -208,7 +208,7 @@ export function SleepQualityChart({ sleepLogs }: { sleepLogs: SleepLog[] }) {
         <h3 className="font-semibold text-text-primary">Quality & Energy</h3>
       </div>
       <div className="h-48">
-        <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={150}>
+        <ResponsiveContainer width="100%" height={192}>
           <BarChart data={data} barGap={2}>
             <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
             <XAxis
@@ -284,7 +284,7 @@ export function RecoveryScoreChart({ sleepLogs, profile }: { sleepLogs: SleepLog
         <h3 className="font-semibold text-text-primary">Recovery Score Trend</h3>
       </div>
       <div className="h-48">
-        <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={150}>
+        <ResponsiveContainer width="100%" height={192}>
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
             <XAxis
@@ -377,7 +377,7 @@ export function SleepTimingChart({ sleepLogs }: { sleepLogs: SleepLog[] }) {
         <h3 className="font-semibold text-text-primary">Sleep Timing Patterns</h3>
       </div>
       <div className="h-48">
-        <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={150}>
+        <ResponsiveContainer width="100%" height={192}>
           <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke={colors.border} />
             <XAxis
