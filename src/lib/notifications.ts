@@ -128,11 +128,11 @@ export async function getUsersForDailyReminder(): Promise<
   // Get users who have reminders enabled and haven't logged today
   const today = new Date().toISOString().split('T')[0];
 
+  // Get users who have either email OR push notifications enabled
   const { data: profiles, error } = await supabase
     .from('profiles')
     .select('id, reminder_time')
-    .eq('email_reminders', true)
-    .eq('push_notifications_enabled', true);
+    .or('email_reminders.eq.true,push_notifications_enabled.eq.true');
 
   if (error) {
     console.error('Failed to get users for reminder:', error);
@@ -163,11 +163,11 @@ export async function getUsersForDailyReminder(): Promise<
 export async function getUsersForWeeklySummary(): Promise<string[]> {
   const supabase = getSupabaseAdmin();
 
+  // Get users who have either email weekly summary OR push notifications enabled
   const { data: profiles, error } = await supabase
     .from('profiles')
     .select('id')
-    .eq('email_weekly_summary', true)
-    .eq('push_notifications_enabled', true);
+    .or('email_weekly_summary.eq.true,push_notifications_enabled.eq.true');
 
   if (error) {
     console.error('Failed to get users for weekly summary:', error);

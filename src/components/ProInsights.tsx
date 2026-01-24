@@ -57,13 +57,30 @@ const colors = {
 // Custom tooltip component
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
+    // Map entry names to their units
+    const getUnit = (name: string) => {
+      switch (name) {
+        case 'Duration':
+        case 'Goal':
+          return 'h';
+        case 'Quality':
+        case 'Energy':
+          return '/5';
+        case 'Score':
+        case 'Bedtime':
+        case 'Wake Time':
+          return '';
+        default:
+          return '';
+      }
+    };
+
     return (
       <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
         <p className="text-text-secondary text-sm mb-1">{label}</p>
         {payload.map((entry: any, index: number) => (
           <p key={index} className="text-text-primary font-medium" style={{ color: entry.color }}>
-            {entry.name}: {entry.value}
-            {entry.name === 'Duration' ? 'h' : entry.name === 'Score' ? '' : '/5'}
+            {entry.name}: {entry.value}{getUnit(entry.name)}
           </p>
         ))}
       </div>
@@ -74,13 +91,25 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 // Sleep Duration Trends Chart
 export function SleepDurationChart({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: Profile }) {
+  if (sleepLogs.length < 2) {
+    return (
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Clock className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold text-text-primary">Sleep Duration Trends</h3>
+        </div>
+        <p className="text-text-muted text-sm text-center py-8">Need at least 2 sleep logs to show trends</p>
+      </div>
+    );
+  }
+
   const data = sleepLogs
     .slice(0, 14)
     .reverse()
     .map((log) => ({
       date: new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       duration: parseFloat((log.duration_minutes / 60).toFixed(1)),
-      goal: profile.sleep_goal_hours,
+      goal: profile.sleep_goal_hours || 8,
     }));
 
   return (
@@ -151,6 +180,18 @@ export function SleepDurationChart({ sleepLogs, profile }: { sleepLogs: SleepLog
 
 // Sleep Quality Bar Chart
 export function SleepQualityChart({ sleepLogs }: { sleepLogs: SleepLog[] }) {
+  if (sleepLogs.length < 2) {
+    return (
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Zap className="w-5 h-5 text-warning" />
+          <h3 className="font-semibold text-text-primary">Quality & Energy</h3>
+        </div>
+        <p className="text-text-muted text-sm text-center py-8">Need at least 2 sleep logs to show trends</p>
+      </div>
+    );
+  }
+
   const data = sleepLogs
     .slice(0, 14)
     .reverse()
@@ -206,6 +247,18 @@ export function SleepQualityChart({ sleepLogs }: { sleepLogs: SleepLog[] }) {
 
 // Recovery Score Trend
 export function RecoveryScoreChart({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: Profile }) {
+  if (sleepLogs.length < 2) {
+    return (
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Target className="w-5 h-5 text-success" />
+          <h3 className="font-semibold text-text-primary">Recovery Score Trend</h3>
+        </div>
+        <p className="text-text-muted text-sm text-center py-8">Need at least 2 sleep logs to show trends</p>
+      </div>
+    );
+  }
+
   const data = sleepLogs
     .slice(0, 14)
     .reverse()
@@ -219,7 +272,6 @@ export function RecoveryScoreChart({ sleepLogs, profile }: { sleepLogs: SleepLog
     });
 
   const getBarColor = (score: number) => {
-    if (score >= 85) return colors.success;
     if (score >= 70) return colors.success;
     if (score >= 50) return colors.warning;
     return colors.danger;
@@ -278,6 +330,18 @@ export function RecoveryScoreChart({ sleepLogs, profile }: { sleepLogs: SleepLog
 
 // Bedtime/Wake Time Pattern Chart
 export function SleepTimingChart({ sleepLogs }: { sleepLogs: SleepLog[] }) {
+  if (sleepLogs.length < 2) {
+    return (
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Moon className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold text-text-primary">Sleep Timing Patterns</h3>
+        </div>
+        <p className="text-text-muted text-sm text-center py-8">Need at least 2 sleep logs to show patterns</p>
+      </div>
+    );
+  }
+
   const data = sleepLogs
     .slice(0, 14)
     .reverse()
@@ -533,8 +597,12 @@ export function InsightsRecommendations({ sleepLogs, checklistLogs, profile }: {
   if (sleepLogs.length < 3) return null;
 
   // Analyze sleep duration
-  const avgDuration = sleepLogs.slice(0, 7).reduce((sum, log) => sum + log.duration_minutes, 0) / Math.min(sleepLogs.length, 7) / 60;
-  const goalDiff = avgDuration - profile.sleep_goal_hours;
+  const logsForAvg = sleepLogs.slice(0, 7);
+  const avgDuration = logsForAvg.length > 0
+    ? logsForAvg.reduce((sum, log) => sum + log.duration_minutes, 0) / logsForAvg.length / 60
+    : 0;
+  const sleepGoal = profile.sleep_goal_hours || 8;
+  const goalDiff = avgDuration - sleepGoal;
 
   if (goalDiff < -0.5) {
     insights.push({
@@ -549,7 +617,7 @@ export function InsightsRecommendations({ sleepLogs, checklistLogs, profile }: {
       icon: CheckCircle,
       iconColor: 'text-success',
       title: 'Meeting Your Goal',
-      description: `You're averaging ${avgDuration.toFixed(1)} hours, meeting your ${profile.sleep_goal_hours}h goal. Keep it up!`,
+      description: `You're averaging ${avgDuration.toFixed(1)} hours, meeting your ${sleepGoal}h goal. Keep it up!`,
       type: 'success',
     });
   }
@@ -561,7 +629,9 @@ export function InsightsRecommendations({ sleepLogs, checklistLogs, profile }: {
 
     const itemAverages = checklistItems.map((item) => ({
       item,
-      avg: recentLogs.filter((log) => log[item as keyof ChecklistLog] === true).length / recentLogs.length,
+      avg: recentLogs.length > 0
+        ? recentLogs.filter((log) => log[item as keyof ChecklistLog] === true).length / recentLogs.length
+        : 0,
     }));
 
     const lowestItem = itemAverages.sort((a, b) => a.avg - b.avg)[0];

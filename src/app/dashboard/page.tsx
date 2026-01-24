@@ -391,8 +391,10 @@ export default async function DashboardPage() {
 
   const userName = profile?.name || profile?.email?.split('@')[0] || 'there';
 
-  // Normalize is_pro to handle potential type coercion issues from database
-  const isPro = profile.is_pro === true || profile.is_pro === 'true' || profile.is_pro === 1;
+  // Check Pro status with expiration validation
+  const isProFlag = profile.is_pro === true || profile.is_pro === 'true' || profile.is_pro === 1;
+  const proNotExpired = !profile.pro_expires_at || new Date(profile.pro_expires_at) > new Date();
+  const isPro = isProFlag && proNotExpired;
 
   return (
     <div className="min-h-screen bg-background pb-24">
