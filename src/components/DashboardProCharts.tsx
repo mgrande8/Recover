@@ -78,7 +78,7 @@ function MiniRecoveryChart({ sleepLogs, profile }: { sleepLogs: SleepLog[]; prof
 
   return (
     <div className="h-24">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={80}>
         <BarChart data={data} barGap={2}>
           <XAxis
             dataKey="date"
@@ -114,7 +114,7 @@ function MiniDurationChart({ sleepLogs, profile }: { sleepLogs: SleepLog[]; prof
 
   return (
     <div className="h-24">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={80}>
         <AreaChart data={data}>
           <defs>
             <linearGradient id="durationGrad" x1="0" y1="0" x2="0" y2="1">

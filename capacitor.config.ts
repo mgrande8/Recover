@@ -4,7 +4,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const PRODUCTION_URL = process.env.CAPACITOR_SERVER_URL || 'https://recover-five.vercel.app';
 
 const config: CapacitorConfig = {
-  appId: 'com.recover.app',
+  appId: 'com.mgrande8.recover',
   appName: 'Recover',
   webDir: 'out',
   server: {
