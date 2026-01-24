@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Moon, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Moon, Mail, Lock, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
 
@@ -15,7 +15,6 @@ export default function SignUpPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,55 +36,68 @@ export default function SignUpPage() {
 
     try {
       const supabase = createClient();
-      const { error: signUpError } = await supabase.auth.signUp({
+
+      // Sign up the user
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
       });
 
       if (signUpError) {
-        setError(signUpError.message);
+        // Handle specific errors
+        if (signUpError.message.includes('already registered')) {
+          setError('This email is already registered. Try logging in instead.');
+        } else {
+          setError(signUpError.message);
+        }
         return;
       }
 
-      // Show success message
-      setSuccess(true);
-    } catch {
-      setError('An unexpected error occurred');
+      // Check if we got a session (email confirmation disabled)
+      if (data.session) {
+        // User is logged in immediately - go to onboarding
+        console.log('Signup successful, redirecting to onboarding...');
+        router.push('/onboarding');
+        router.refresh();
+        return;
+      }
+
+      // Check if user was created but needs email confirmation
+      if (data.user && !data.session) {
+        // Email confirmation is still enabled in Supabase
+        // Try to sign in immediately anyway (in case it works)
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInData.session) {
+          // Sign in worked! Go to onboarding
+          console.log('Auto sign-in successful, redirecting to onboarding...');
+          router.push('/onboarding');
+          router.refresh();
+          return;
+        }
+
+        // If sign in failed, email confirmation is required
+        // Show a helpful message but this shouldn't happen if settings are correct
+        if (signInError) {
+          console.log('Email confirmation may be required:', signInError.message);
+          setError('Account created! Please check your email to confirm, then log in. (Ask admin to disable email confirmation for instant access)');
+          return;
+        }
+      }
+
+      // Fallback: something unexpected happened
+      setError('Account created but could not log in automatically. Please try logging in.');
+
+    } catch (err) {
+      console.error('Signup error:', err);
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Success state - show confirmation message
-  if (success) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4 pt-safe pb-safe">
-        <div className="max-w-md w-full">
-          <div className="bg-card rounded-2xl border border-border p-8 text-center">
-            <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Mail className="w-8 h-8 text-success" />
-            </div>
-            <h1 className="text-2xl font-bold text-text-primary mb-2">Check your email</h1>
-            <p className="text-text-secondary mb-6">
-              We&apos;ve sent a confirmation link to <strong className="text-text-primary">{email}</strong>.
-              Click the link to activate your account.
-            </p>
-            <p className="text-text-muted text-sm mb-6">
-              Didn&apos;t receive the email? Check your spam folder or try signing up again.
-            </p>
-            <Link href="/login">
-              <Button variant="outline" className="w-full">
-                Back to Login
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 pt-safe pb-safe">
@@ -133,7 +145,8 @@ export default function SignUpPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
-                  className="w-full bg-background border border-border rounded-lg py-3 pl-10 pr-4 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+                  disabled={isLoading}
+                  className="w-full bg-background border border-border rounded-lg py-3 pl-10 pr-4 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors disabled:opacity-50"
                 />
               </div>
             </div>
@@ -152,8 +165,9 @@ export default function SignUpPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="At least 8 characters"
                   required
+                  disabled={isLoading}
                   minLength={8}
-                  className="w-full bg-background border border-border rounded-lg py-3 pl-10 pr-12 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+                  className="w-full bg-background border border-border rounded-lg py-3 pl-10 pr-12 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors disabled:opacity-50"
                 />
                 <button
                   type="button"
@@ -179,15 +193,23 @@ export default function SignUpPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Confirm your password"
                   required
+                  disabled={isLoading}
                   minLength={8}
-                  className="w-full bg-background border border-border rounded-lg py-3 pl-10 pr-4 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+                  className="w-full bg-background border border-border rounded-lg py-3 pl-10 pr-4 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors disabled:opacity-50"
                 />
               </div>
             </div>
 
             {/* Submit button */}
-            <Button type="submit" className="w-full" isLoading={isLoading}>
-              Create Account
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                'Create Account'
+              )}
             </Button>
           </form>
 
