@@ -41,7 +41,7 @@ public class StoreKitPlugin: CAPPlugin, CAPBridgedPlugin {
                     "price": product.price.description,
                     "displayPrice": product.displayPrice,
                     "type": product.type.rawValue,
-                    "subscription": getSubscriptionInfo(product)
+                    "subscription": getSubscriptionInfo(product) as Any
                 ]
             }
 

@@ -15,9 +15,11 @@
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
-		583E1FE22F2919A7004903A1 /* StoreKitPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 583E1FE02F2919A7004903A1 /* StoreKitPlugin.m */; };
-		583E1FE32F2919A7004903A1 /* StoreKitPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 583E1FE12F2919A7004903A1 /* StoreKitPlugin.swift */; };
-		583E1FE42F2919A7004903A1 /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 583E1FDF2F2919A7004903A1 /* StoreKitManager.swift */; };
+		582F0C5E2F2920C6008AFE13 /* StoreKitPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 582F0C5C2F2920C6008AFE13 /* StoreKitPlugin.m */; };
+		582F0C5F2F2920C6008AFE13 /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 582F0C5B2F2920C6008AFE13 /* StoreKitManager.swift */; };
+		582F0C602F2920C6008AFE13 /* StoreKitPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 582F0C5D2F2920C6008AFE13 /* StoreKitPlugin.swift */; };
+		582F0C622F292284008AFE13 /* BridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 582F0C612F292284008AFE13 /* BridgeViewController.swift */; };
+		582F0C652F292874008AFE13 /* Products.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 582F0C642F292874008AFE13 /* Products.storekit */; };
 		583E1FE82F291A02004903A1 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 583E1FE72F291A02004903A1 /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
@@ -32,9 +34,11 @@
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
 		5824F0712F252BA200A823E2 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
-		583E1FDF2F2919A7004903A1 /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
-		583E1FE02F2919A7004903A1 /* StoreKitPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = StoreKitPlugin.m; sourceTree = "<group>"; };
-		583E1FE12F2919A7004903A1 /* StoreKitPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitPlugin.swift; sourceTree = "<group>"; };
+		582F0C5B2F2920C6008AFE13 /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
+		582F0C5C2F2920C6008AFE13 /* StoreKitPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = StoreKitPlugin.m; sourceTree = "<group>"; };
+		582F0C5D2F2920C6008AFE13 /* StoreKitPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitPlugin.swift; sourceTree = "<group>"; };
+		582F0C612F292284008AFE13 /* BridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeViewController.swift; sourceTree = "<group>"; };
+		582F0C642F292874008AFE13 /* Products.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; name = Products.storekit; path = App/Products.storekit; sourceTree = "<group>"; };
 		583E1FE52F2919AB004903A1 /* App-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "App-Bridging-Header.h"; sourceTree = "<group>"; };
 		583E1FE72F291A02004903A1 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
@@ -56,12 +60,10 @@
 		504EC2FB1FED79650016851F = {
 			isa = PBXGroup;
 			children = (
+				582F0C642F292874008AFE13 /* Products.storekit */,
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
 				504EC3051FED79650016851F /* Products */,
-				583E1FDF2F2919A7004903A1 /* StoreKitManager.swift */,
-				583E1FE02F2919A7004903A1 /* StoreKitPlugin.m */,
-				583E1FE12F2919A7004903A1 /* StoreKitPlugin.swift */,
 				583E1FE52F2919AB004903A1 /* App-Bridging-Header.h */,
 				583E1FE62F291A02004903A1 /* Frameworks */,
 			);
@@ -78,6 +80,9 @@
 		504EC3061FED79650016851F /* App */ = {
 			isa = PBXGroup;
 			children = (
+				582F0C5B2F2920C6008AFE13 /* StoreKitManager.swift */,
+				582F0C5C2F2920C6008AFE13 /* StoreKitPlugin.m */,
+				582F0C5D2F2920C6008AFE13 /* StoreKitPlugin.swift */,
 				5824F0712F252BA200A823E2 /* App.entitlements */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
@@ -87,6 +92,7 @@
 				504EC3131FED79650016851F /* Info.plist */,
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
+				582F0C612F292284008AFE13 /* BridgeViewController.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -170,6 +176,7 @@
 				504EC30F1FED79650016851F /* Assets.xcassets in Resources */,
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
+				582F0C652F292874008AFE13 /* Products.storekit in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -181,9 +188,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				583E1FE22F2919A7004903A1 /* StoreKitPlugin.m in Sources */,
-				583E1FE32F2919A7004903A1 /* StoreKitPlugin.swift in Sources */,
-				583E1FE42F2919A7004903A1 /* StoreKitManager.swift in Sources */,
+				582F0C5E2F2920C6008AFE13 /* StoreKitPlugin.m in Sources */,
+				582F0C622F292284008AFE13 /* BridgeViewController.swift in Sources */,
+				582F0C5F2F2920C6008AFE13 /* StoreKitManager.swift in Sources */,
+				582F0C602F2920C6008AFE13 /* StoreKitPlugin.swift in Sources */,
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -263,7 +271,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -319,7 +327,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -342,7 +350,7 @@
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Recover App";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -371,7 +379,7 @@
 				INFOPLIST_FILE = App/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Recover App";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

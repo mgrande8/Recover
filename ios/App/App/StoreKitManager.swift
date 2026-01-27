@@ -46,8 +46,15 @@ class StoreKitManager: ObservableObject {
         isLoading = true
         errorMessage = nil
 
+        print("StoreKit: Loading products with IDs: \(StoreKitManager.allProductIds)")
+
         do {
             let storeProducts = try await Product.products(for: StoreKitManager.allProductIds)
+
+            print("StoreKit: Loaded \(storeProducts.count) products")
+            for product in storeProducts {
+                print("StoreKit: Product - ID: \(product.id), Name: \(product.displayName), Price: \(product.displayPrice)")
+            }
 
             // Sort products: monthly first, then annual
             products = storeProducts.sorted { product1, product2 in
@@ -58,6 +65,11 @@ class StoreKitManager: ObservableObject {
                     return false
                 }
                 return product1.price < product2.price
+            }
+
+            if products.isEmpty {
+                print("StoreKit: WARNING - No products returned from App Store!")
+                errorMessage = "No products available. Products may still be processing in App Store Connect."
             }
 
             isLoading = false
@@ -72,7 +84,14 @@ class StoreKitManager: ObservableObject {
 
     /// Purchase a product by ID
     func purchase(productId: String) async throws -> PurchaseResult {
+        print("StoreKit: Attempting to purchase product: \(productId)")
+        print("StoreKit: Available products count: \(products.count)")
+        for p in products {
+            print("StoreKit: Available product: \(p.id)")
+        }
+
         guard let product = products.first(where: { $0.id == productId }) else {
+            print("StoreKit: Product NOT FOUND in loaded products!")
             throw StoreKitError.productNotFound
         }
 
