@@ -12,6 +12,7 @@ import {
   LogOut,
   ChevronRight,
   Star,
+  Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { ManageSubscriptionButton } from '@/components/ManageSubscriptionButton';
@@ -222,6 +223,17 @@ export default async function SettingsPage() {
             Sign Out
           </Button>
         </form>
+
+        {/* Delete Account */}
+        <Link href="/dashboard/settings/delete-account">
+          <Button
+            variant="outline"
+            className="w-full border-error/50 text-error hover:bg-error/10 hover:border-error"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete Account
+          </Button>
+        </Link>
 
         {/* App info */}
         <div className="text-center text-text-muted text-sm">
