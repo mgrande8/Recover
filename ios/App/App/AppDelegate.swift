@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import StoreKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,7 +8,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Initialize StoreKitManager to start listening for transactions early
+        // This ensures we catch any pending transactions from interrupted purchases
+        Task { @MainActor in
+            _ = StoreKitManager.shared
+        }
+
         return true
     }
 

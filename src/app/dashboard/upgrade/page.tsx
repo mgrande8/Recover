@@ -13,9 +13,13 @@ import {
   Sparkles,
   Loader2,
   Crown,
+  RotateCcw,
+  AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
+import { shouldUseStoreKit } from '@/lib/platform';
+import { StoreKit, APPLE_PRODUCTS, type StoreKitProduct } from '@/lib/storekit';
 
 const proFeatures = [
   {
@@ -58,12 +62,37 @@ export default function UpgradePage() {
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('annual');
   const [isLoading, setIsLoading] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
   const [isCheckingPro, setIsCheckingPro] = useState(true);
   const [isPro, setIsPro] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Check if user is already Pro
+  // StoreKit state (iOS only)
+  const [isStoreKit, setIsStoreKit] = useState(false);
+  const [storeKitProducts, setStoreKitProducts] = useState<StoreKitProduct[]>([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+
+  // Initialize and check platform
   useEffect(() => {
-    const checkProStatus = async () => {
+    const init = async () => {
+      // Check if we should use StoreKit (iOS native)
+      const useStoreKit = shouldUseStoreKit();
+      setIsStoreKit(useStoreKit);
+
+      // Load StoreKit products if on iOS
+      if (useStoreKit) {
+        setIsLoadingProducts(true);
+        try {
+          const products = await StoreKit.getProducts();
+          setStoreKitProducts(products);
+        } catch (err) {
+          console.error('Failed to load StoreKit products:', err);
+        }
+        setIsLoadingProducts(false);
+      }
+
+      // Check Pro status
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
@@ -81,35 +110,97 @@ export default function UpgradePage() {
       setIsCheckingPro(false);
     };
 
-    checkProStatus();
+    init();
   }, []);
 
+  // Handle upgrade - routes to StoreKit or Stripe based on platform
   const handleUpgrade = async () => {
     setIsLoading(true);
+    setError(null);
 
     try {
-      const response = await fetch('/api/stripe/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: selectedPlan }),
-      });
+      if (isStoreKit) {
+        // iOS: Use StoreKit
+        const productId = selectedPlan === 'annual'
+          ? APPLE_PRODUCTS.ANNUAL
+          : APPLE_PRODUCTS.MONTHLY;
 
-      const data = await response.json();
+        const result = await StoreKit.purchase(productId);
 
-      if (data.url) {
-        window.location.href = data.url;
+        if (result.success) {
+          setSuccessMessage('Purchase successful! You now have Pro access.');
+          setIsPro(true);
+        } else if (result.cancelled) {
+          // User cancelled - not an error
+          setIsLoading(false);
+          return;
+        } else if (result.pending) {
+          setSuccessMessage('Purchase is pending approval. You\'ll get Pro access once approved.');
+        }
       } else {
-        console.error('No checkout URL returned');
-        setIsLoading(false);
+        // Web: Use Stripe
+        const response = await fetch('/api/stripe/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan: selectedPlan }),
+        });
+
+        const data = await response.json();
+
+        if (data.url) {
+          window.location.href = data.url;
+          return; // Don't set loading to false, we're navigating away
+        } else {
+          throw new Error(data.error || 'Failed to create checkout session');
+        }
       }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      setIsLoading(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     }
+
+    setIsLoading(false);
+  };
+
+  // Handle restore purchases (iOS only, Apple requirement)
+  const handleRestore = async () => {
+    setIsRestoring(true);
+    setError(null);
+
+    try {
+      const result = await StoreKit.restorePurchases();
+
+      if (result.hasActiveSubscription) {
+        setSuccessMessage('Purchases restored! Your Pro subscription is now active.');
+        setIsPro(true);
+      } else {
+        setError('No active subscription found. If you believe this is an error, please contact support.');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to restore purchases');
+    }
+
+    setIsRestoring(false);
+  };
+
+  // Get pricing display
+  const getMonthlyPrice = () => {
+    if (isStoreKit && storeKitProducts.length > 0) {
+      const monthly = storeKitProducts.find(p => p.id === APPLE_PRODUCTS.MONTHLY);
+      return monthly?.displayPrice || '$4.99';
+    }
+    return '$4.99';
+  };
+
+  const getAnnualPrice = () => {
+    if (isStoreKit && storeKitProducts.length > 0) {
+      const annual = storeKitProducts.find(p => p.id === APPLE_PRODUCTS.ANNUAL);
+      return annual?.displayPrice || '$39.99';
+    }
+    return '$39.99';
   };
 
   // Loading state
-  if (isCheckingPro) {
+  if (isCheckingPro || isLoadingProducts) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -138,6 +229,12 @@ export default function UpgradePage() {
         </header>
 
         <main className="max-w-lg mx-auto px-4 py-6">
+          {successMessage && (
+            <div className="mb-4 p-4 bg-success/10 border border-success/30 rounded-xl">
+              <p className="text-success text-sm">{successMessage}</p>
+            </div>
+          )}
+
           <div className="bg-gradient-to-br from-pro-accent/20 to-pro-accent/5 rounded-2xl border border-pro-accent/30 p-8 text-center">
             <div className="w-20 h-20 bg-pro-accent/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <Crown className="w-10 h-10 text-pro-accent" />
@@ -207,6 +304,14 @@ export default function UpgradePage() {
 
       {/* Main content */}
       <main className="max-w-lg mx-auto px-4 py-6 space-y-6">
+        {/* Error message */}
+        {error && (
+          <div className="p-4 bg-error/10 border border-error/30 rounded-xl flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-error flex-shrink-0 mt-0.5" />
+            <p className="text-error text-sm">{error}</p>
+          </div>
+        )}
+
         {/* Hero section */}
         <div className="bg-gradient-to-br from-primary/20 to-primary/5 rounded-2xl border border-primary/30 p-6 text-center">
           <div className="w-16 h-16 bg-pro-accent/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -230,7 +335,7 @@ export default function UpgradePage() {
             }`}
           >
             <p className="text-sm text-text-secondary mb-1">Monthly</p>
-            <p className="text-2xl font-bold text-text-primary">$4.99</p>
+            <p className="text-2xl font-bold text-text-primary">{getMonthlyPrice()}</p>
             <p className="text-sm text-text-muted">/month</p>
             {selectedPlan === 'monthly' && (
               <div className="absolute top-3 right-3 w-5 h-5 bg-pro-accent rounded-full flex items-center justify-center">
@@ -252,7 +357,7 @@ export default function UpgradePage() {
               SAVE 33%
             </span>
             <p className="text-sm text-text-secondary mb-1">Annual</p>
-            <p className="text-2xl font-bold text-text-primary">$39.99</p>
+            <p className="text-2xl font-bold text-text-primary">{getAnnualPrice()}</p>
             <p className="text-sm text-text-muted">/year</p>
             <p className="text-xs text-success mt-1">$3.33/mo</p>
             {selectedPlan === 'annual' && (
@@ -264,7 +369,7 @@ export default function UpgradePage() {
         </div>
 
         {/* Upgrade button */}
-        <div className="bg-card rounded-xl border border-border p-4">
+        <div className="bg-card rounded-xl border border-border p-4 space-y-3">
           <Button
             onClick={handleUpgrade}
             disabled={isLoading}
@@ -274,16 +379,43 @@ export default function UpgradePage() {
             {isLoading ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Loading...
+                {isStoreKit ? 'Processing...' : 'Loading...'}
               </>
             ) : (
               <>
                 <Star className="w-5 h-5 mr-2" />
-                {selectedPlan === 'annual' ? 'Get Annual Pro — $39.99/year' : 'Get Monthly Pro — $4.99/month'}
+                {selectedPlan === 'annual'
+                  ? `Get Annual Pro — ${getAnnualPrice()}/year`
+                  : `Get Monthly Pro — ${getMonthlyPrice()}/month`}
               </>
             )}
           </Button>
-          <p className="text-xs text-text-muted text-center mt-3">Cancel anytime. No questions asked.</p>
+
+          {/* Restore Purchases button - iOS only (Apple requirement) */}
+          {isStoreKit && (
+            <Button
+              onClick={handleRestore}
+              disabled={isRestoring}
+              variant="outline"
+              className="w-full"
+            >
+              {isRestoring ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Restoring...
+                </>
+              ) : (
+                <>
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Restore Purchases
+                </>
+              )}
+            </Button>
+          )}
+
+          <p className="text-xs text-text-muted text-center">
+            Cancel anytime. No questions asked.
+          </p>
         </div>
 
         {/* Pro features */}
@@ -345,25 +477,41 @@ export default function UpgradePage() {
           <div className="bg-card rounded-xl border border-border p-4">
             <p className="font-medium text-text-primary mb-1">Can I cancel anytime?</p>
             <p className="text-sm text-text-secondary">
-              Yes! You can cancel your subscription at any time from your settings. You&apos;ll
+              Yes! You can cancel your subscription at any time. You&apos;ll
               keep Pro access until the end of your billing period.
             </p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4">
             <p className="font-medium text-text-primary mb-1">Can I switch between plans?</p>
             <p className="text-sm text-text-secondary">
-              Yes! You can switch between monthly and annual billing anytime through the
-              Stripe customer portal in your settings.
+              Yes! You can switch between monthly and annual billing anytime through
+              {isStoreKit ? ' your device\'s subscription settings.' : ' the customer portal in your settings.'}
             </p>
           </div>
           <div className="bg-card rounded-xl border border-border p-4">
             <p className="font-medium text-text-primary mb-1">Is my payment secure?</p>
             <p className="text-sm text-text-secondary">
-              Absolutely. We use Stripe for payment processing, the same platform used by
-              millions of businesses worldwide.
+              Absolutely. {isStoreKit
+                ? 'Payments are securely processed through the App Store.'
+                : 'We use Stripe for payment processing, the same platform used by millions of businesses worldwide.'}
             </p>
           </div>
         </div>
+
+        {/* Subscription terms (iOS requirement) */}
+        {isStoreKit && (
+          <div className="text-xs text-text-muted text-center space-y-1">
+            <p>
+              Payment will be charged to your Apple ID account at confirmation of purchase.
+              Subscription automatically renews unless auto-renew is turned off at least 24 hours before the end of the current period.
+            </p>
+            <p>
+              <Link href="/terms" className="underline">Terms of Service</Link>
+              {' | '}
+              <Link href="/privacy" className="underline">Privacy Policy</Link>
+            </p>
+          </div>
+        )}
       </main>
     </div>
   );

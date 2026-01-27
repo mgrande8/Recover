@@ -15,6 +15,10 @@
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
+		583E1FE22F2919A7004903A1 /* StoreKitPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = 583E1FE02F2919A7004903A1 /* StoreKitPlugin.m */; };
+		583E1FE32F2919A7004903A1 /* StoreKitPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 583E1FE12F2919A7004903A1 /* StoreKitPlugin.swift */; };
+		583E1FE42F2919A7004903A1 /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 583E1FDF2F2919A7004903A1 /* StoreKitManager.swift */; };
+		583E1FE82F291A02004903A1 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 583E1FE72F291A02004903A1 /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +32,11 @@
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
 		5824F0712F252BA200A823E2 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
+		583E1FDF2F2919A7004903A1 /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
+		583E1FE02F2919A7004903A1 /* StoreKitPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = StoreKitPlugin.m; sourceTree = "<group>"; };
+		583E1FE12F2919A7004903A1 /* StoreKitPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitPlugin.swift; sourceTree = "<group>"; };
+		583E1FE52F2919AB004903A1 /* App-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "App-Bridging-Header.h"; sourceTree = "<group>"; };
+		583E1FE72F291A02004903A1 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -37,6 +46,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */,
+				583E1FE82F291A02004903A1 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -49,6 +59,11 @@
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
 				504EC3051FED79650016851F /* Products */,
+				583E1FDF2F2919A7004903A1 /* StoreKitManager.swift */,
+				583E1FE02F2919A7004903A1 /* StoreKitPlugin.m */,
+				583E1FE12F2919A7004903A1 /* StoreKitPlugin.swift */,
+				583E1FE52F2919AB004903A1 /* App-Bridging-Header.h */,
+				583E1FE62F291A02004903A1 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -74,6 +89,14 @@
 				50B271D01FEDC1A000F3C39B /* public */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		583E1FE62F291A02004903A1 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				583E1FE72F291A02004903A1 /* StoreKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -111,7 +134,7 @@
 				TargetAttributes = {
 					504EC3031FED79650016851F = {
 						CreatedOnToolsVersion = 9.2;
-						LastSwiftMigration = 1100;
+						LastSwiftMigration = 2620;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -158,6 +181,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				583E1FE22F2919A7004903A1 /* StoreKitPlugin.m in Sources */,
+				583E1FE32F2919A7004903A1 /* StoreKitPlugin.swift in Sources */,
+				583E1FE42F2919A7004903A1 /* StoreKitManager.swift in Sources */,
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -308,6 +334,7 @@
 			baseConfigurationReference = 958DCC722DB07C7200EA8C5F /* debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -325,6 +352,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.mgrande8.recover;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OBJC_BRIDGING_HEADER = "App-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -334,6 +363,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -350,6 +380,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.mgrande8.recover;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "App-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

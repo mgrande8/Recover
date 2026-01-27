@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iPad Screenshot 1 - Hero</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0A0E1A;
+      min-height: 100vh;
+    }
+
+    .screenshot-container {
+      width: 2048px;
+      height: 2732px;
+      background: linear-gradient(180deg, #0A0E1A 0%, #0D1220 50%, #0A0E1A 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .marketing-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 160px 120px 240px;
+      background: linear-gradient(180deg, rgba(10, 14, 26, 0.98) 0%, rgba(10, 14, 26, 0.9) 60%, transparent 100%);
+      z-index: 10;
+      text-align: center;
+    }
+
+    .headline {
+      font-size: 120px;
+      font-weight: 800;
+      color: #FFFFFF;
+      line-height: 1.1;
+      margin-bottom: 40px;
+      letter-spacing: -2px;
+    }
+
+    .headline span {
+      color: #F59E0B;
+    }
+
+    .subtext {
+      font-size: 56px;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.4;
+    }
+
+    .app-mockup {
+      position: absolute;
+      top: 600px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1700px;
+    }
+
+    .dashboard {
+      background: #151B2B;
+      border-radius: 60px;
+      padding: 80px;
+      box-shadow: 0 60px 120px rgba(0, 0, 0, 0.5);
+    }
+
+    .dash-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 60px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .logo-icon {
+      width: 72px;
+      height: 72px;
+      background: #3B82F6;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-text {
+      font-size: 48px;
+      font-weight: 700;
+      color: #F8FAFC;
+    }
+
+    .greeting {
+      margin-bottom: 60px;
+    }
+
+    .greeting h1 {
+      font-size: 64px;
+      font-weight: 700;
+      color: #F8FAFC;
+      margin-bottom: 12px;
+    }
+
+    .greeting p {
+      font-size: 40px;
+      color: #94A3B8;
+    }
+
+    .recovery-card {
+      background: #1E293B;
+      border-radius: 40px;
+      padding: 60px;
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .recovery-label {
+      font-size: 32px;
+      color: #94A3B8;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 24px;
+    }
+
+    .recovery-score {
+      font-size: 220px;
+      font-weight: 800;
+      color: #22C55E;
+      line-height: 1;
+      margin-bottom: 20px;
+    }
+
+    .recovery-status {
+      font-size: 48px;
+      font-weight: 600;
+      color: #F8FAFC;
+      margin-bottom: 12px;
+    }
+
+    .recovery-message {
+      font-size: 36px;
+      color: #94A3B8;
+    }
+
+    .progress-bar {
+      height: 20px;
+      background: #0A0E1A;
+      border-radius: 10px;
+      margin-top: 50px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 87%;
+      background: linear-gradient(90deg, #22C55E, #16A34A);
+      border-radius: 10px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+      margin-top: 50px;
+      padding-top: 50px;
+      border-top: 1px solid #334155;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 52px;
+      font-weight: 700;
+      color: #F8FAFC;
+      margin-bottom: 12px;
+    }
+
+    .stat-label {
+      font-size: 32px;
+      color: #64748B;
+    }
+
+    .feature-highlight {
+      position: absolute;
+      bottom: 200px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 80px;
+      z-index: 10;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      padding: 28px 44px;
+      border-radius: 100px;
+    }
+
+    .feature-check {
+      width: 44px;
+      height: 44px;
+      background: #22C55E;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 24px;
+    }
+
+    .feature-text {
+      font-size: 36px;
+      color: #F8FAFC;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="screenshot-container">
+    <div class="marketing-overlay">
+      <h1 class="headline">Sleep Better.<br><span>Perform Better.</span></h1>
+      <p class="subtext">Track, analyze, and optimize your recovery</p>
+    </div>
+
+    <div class="app-mockup">
+      <div class="dashboard">
+        <div class="dash-header">
+          <div class="logo">
+            <div class="logo-icon">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+            </div>
+            <span class="logo-text">Recover</span>
+          </div>
+        </div>
+
+        <div class="greeting">
+          <h1>Good morning, Alex!</h1>
+          <p>Here's your recovery from last night.</p>
+        </div>
+
+        <div class="recovery-card">
+          <p class="recovery-label">Recovery Score</p>
+          <div class="recovery-score">87</div>
+          <p class="recovery-status">Fully Recovered</p>
+          <p class="recovery-message">Ready for high intensity</p>
+          <div class="progress-bar">
+            <div class="progress-fill"></div>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-value">7h 45m</div>
+              <div class="stat-label">Duration</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">4/5</div>
+              <div class="stat-label">Quality</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value">5/5</div>
+              <div class="stat-label">Energy</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="feature-highlight">
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <span class="feature-text">Daily Recovery Score</span>
+      </div>
+      <div class="feature-item">
+        <div class="feature-check">✓</div>
+        <span class="feature-text">30-Second Logging</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

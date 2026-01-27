@@ -2,6 +2,9 @@
 export type UserType = 'athlete' | 'professional' | 'parent' | 'general';
 export type Goal = 'energy' | 'focus' | 'performance' | 'consistency';
 
+// Subscription source types
+export type SubscriptionSource = 'stripe' | 'apple' | null;
+
 export interface Profile {
   id: string;
   email: string | null;
@@ -13,6 +16,12 @@ export interface Profile {
   sleep_goal_hours: number;
   is_pro: boolean;
   pro_expires_at: string | null;
+  // Subscription info
+  stripe_customer_id?: string | null;
+  stripe_subscription_id?: string | null;
+  apple_original_transaction_id?: string | null;
+  apple_product_id?: string | null;
+  subscription_source?: SubscriptionSource;
   // Notification preferences
   email_weekly_summary: boolean;
   email_streak_celebrations: boolean;
@@ -120,3 +129,47 @@ export interface ProfileInput {
   typical_wake_time?: string;
   sleep_goal_hours?: number;
 }
+
+// Apple In-App Purchase types
+export interface AppleProduct {
+  id: string;
+  displayName: string;
+  description: string;
+  price: string;
+  displayPrice: string;
+  type: string;
+  subscription?: {
+    subscriptionGroupID: string;
+    period: {
+      unit: 'day' | 'week' | 'month' | 'year';
+      value: number;
+    };
+  };
+}
+
+export interface ApplePurchaseResult {
+  success: boolean;
+  cancelled?: boolean;
+  pending?: boolean;
+  productId?: string;
+  transactionId?: string;
+  originalTransactionId?: string;
+  expirationDate?: string;
+}
+
+export interface AppleRestoreResult {
+  success: boolean;
+  hasActiveSubscription: boolean;
+  productIds: string[];
+}
+
+export interface AppleSubscriptionStatus {
+  isSubscribed: boolean;
+  productId?: string;
+  originalTransactionId?: string;
+  expirationDate?: string;
+  willAutoRenew?: boolean;
+}
+
+// Plan type for subscriptions
+export type PlanType = 'monthly' | 'annual';
