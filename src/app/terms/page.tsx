@@ -25,7 +25,7 @@ export default function TermsPage() {
       {/* Content */}
       <main className="max-w-2xl mx-auto px-4 py-6">
         <div className="prose prose-invert max-w-none">
-          <p className="text-text-secondary text-sm mb-6">Last updated: January 27, 2025</p>
+          <p className="text-text-secondary text-sm mb-6">Last updated: January 24, 2026</p>
 
           <section className="mb-8">
             <h2 className="text-xl font-semibold text-text-primary mb-3">1. Acceptance of Terms</h2>
@@ -131,7 +131,7 @@ export default function TermsPage() {
           <section className="mb-8">
             <h2 className="text-xl font-semibold text-text-primary mb-3">11. Contact Us</h2>
             <p className="text-text-secondary mb-4">
-              If you have any questions about these Terms, please contact us at support@recover-app.com.
+              If you have any questions about these Terms, please contact us at recover.sleep@gmail.com.
             </p>
           </section>
         </div>
