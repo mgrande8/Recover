@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 type LogEntry = { time: string; message: string; type: 'info' | 'success' | 'error' };
 
-export function PushDiagnostic() {
+export function PushDiagnostic({ visible = true }: { visible?: boolean }) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [running, setRunning] = useState(false);
   const [testSending, setTestSending] = useState(false);
@@ -175,6 +175,8 @@ export function PushDiagnostic() {
     setTestSending(false);
   };
 
+  if (!visible) return null;
+
   return (
     <div className="bg-card rounded-xl border border-border p-4">
       <h3 className="font-semibold text-text-primary mb-3">Push Notification Diagnostic</h3>
@@ -217,5 +219,38 @@ export function PushDiagnostic() {
         </div>
       )}
     </div>
+  );
+}
+
+export function HiddenPushDiagnostic() {
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
+  const tapCount = useRef(0);
+  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleVersionTap = () => {
+    tapCount.current += 1;
+
+    if (tapTimer.current) clearTimeout(tapTimer.current);
+    tapTimer.current = setTimeout(() => {
+      tapCount.current = 0;
+    }, 2000);
+
+    if (tapCount.current >= 5) {
+      setShowDiagnostic((prev) => !prev);
+      tapCount.current = 0;
+    }
+  };
+
+  return (
+    <>
+      {showDiagnostic && <PushDiagnostic visible={true} />}
+      <div
+        className="text-center text-text-muted text-sm cursor-default select-none"
+        onClick={handleVersionTap}
+      >
+        <p>Recover v1.0.2</p>
+        <p>Sleep better. Perform better.</p>
+      </div>
+    </>
   );
 }

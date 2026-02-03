@@ -17,7 +17,7 @@ import {
 import { Button } from '@/components/ui';
 import { ManageSubscriptionButton } from '@/components/ManageSubscriptionButton';
 import { ProUpgradeSuccessModal } from '@/components/ProUpgradeSuccessModal';
-import { PushDiagnostic } from '@/components/PushDiagnostic';
+import { HiddenPushDiagnostic } from '@/components/PushDiagnostic';
 
 // Bottom navigation component
 function BottomNav() {
@@ -236,14 +236,8 @@ export default async function SettingsPage() {
           </Button>
         </Link>
 
-        {/* Push Notification Diagnostic */}
-        <PushDiagnostic />
-
-        {/* App info */}
-        <div className="text-center text-text-muted text-sm">
-          <p>Recover v1.0.0</p>
-          <p>Sleep better. Perform better.</p>
-        </div>
+        {/* App info - tap version 5 times to show push diagnostic */}
+        <HiddenPushDiagnostic />
       </main>
 
       {/* Bottom navigation */}
