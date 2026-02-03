@@ -19,39 +19,6 @@ import { ManageSubscriptionButton } from '@/components/ManageSubscriptionButton'
 import { ProUpgradeSuccessModal } from '@/components/ProUpgradeSuccessModal';
 import { HiddenPushDiagnostic } from '@/components/PushDiagnostic';
 
-// Bottom navigation component
-function BottomNav() {
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border bottom-nav-safe">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="flex items-center justify-around py-2">
-          <Link
-            href="/dashboard"
-            className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted hover:text-text-secondary transition-colors"
-          >
-            <Moon className="w-5 h-5" />
-            <span className="text-xs">Today</span>
-          </Link>
-          <Link
-            href="/dashboard/history"
-            className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted hover:text-text-secondary transition-colors"
-          >
-            <History className="w-5 h-5" />
-            <span className="text-xs">History</span>
-          </Link>
-          <Link
-            href="/dashboard/settings"
-            className="flex flex-col items-center gap-1 py-2 px-4 text-primary"
-          >
-            <User className="w-5 h-5" />
-            <span className="text-xs font-medium">Profile</span>
-          </Link>
-        </div>
-      </div>
-    </nav>
-  );
-}
-
 // Settings item component
 function SettingsItem({
   icon: Icon,
@@ -240,8 +207,6 @@ export default async function SettingsPage() {
         <HiddenPushDiagnostic />
       </main>
 
-      {/* Bottom navigation */}
-      <BottomNav />
     </div>
   );
 }

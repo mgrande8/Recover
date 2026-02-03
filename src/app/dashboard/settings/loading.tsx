@@ -1,4 +1,3 @@
-import { Moon, History, User } from 'lucide-react';
 import { Skeleton } from '@/components/ui';
 
 export default function SettingsLoading() {
@@ -53,25 +52,6 @@ export default function SettingsLoading() {
         <Skeleton className="h-11 w-full rounded-lg" />
       </main>
 
-      {/* Bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex items-center justify-around py-2">
-            <div className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
-              <Moon className="w-5 h-5" />
-              <span className="text-xs">Today</span>
-            </div>
-            <div className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
-              <History className="w-5 h-5" />
-              <span className="text-xs">History</span>
-            </div>
-            <div className="flex flex-col items-center gap-1 py-2 px-4 text-primary">
-              <User className="w-5 h-5" />
-              <span className="text-xs font-medium">Profile</span>
-            </div>
-          </div>
-        </div>
-      </nav>
     </div>
   );
 }

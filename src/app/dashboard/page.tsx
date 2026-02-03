@@ -34,39 +34,6 @@ import type { Profile, SleepLog, ChecklistLog } from '@/types';
 import { DashboardProCharts } from '@/components/DashboardProCharts';
 import { ShareStats } from '@/components/ShareStats';
 
-// Navigation component
-function BottomNav() {
-  return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border bottom-nav-safe">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="flex items-center justify-around py-2">
-          <Link
-            href="/dashboard"
-            className="flex flex-col items-center gap-1 py-2 px-4 text-primary"
-          >
-            <Moon className="w-5 h-5" />
-            <span className="text-xs font-medium">Today</span>
-          </Link>
-          <Link
-            href="/dashboard/history"
-            className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted hover:text-text-secondary transition-colors"
-          >
-            <History className="w-5 h-5" />
-            <span className="text-xs">History</span>
-          </Link>
-          <Link
-            href="/dashboard/settings"
-            className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted hover:text-text-secondary transition-colors"
-          >
-            <User className="w-5 h-5" />
-            <span className="text-xs">Profile</span>
-          </Link>
-        </div>
-      </div>
-    </nav>
-  );
-}
-
 // Recovery Score display component
 function RecoveryScoreCard({
   sleepLog,
@@ -517,8 +484,6 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      {/* Bottom navigation */}
-      <BottomNav />
     </div>
   );
 }

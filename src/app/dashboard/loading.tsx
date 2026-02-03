@@ -1,4 +1,4 @@
-import { Moon, History, Settings } from 'lucide-react';
+import { Moon } from 'lucide-react';
 import { Skeleton, SkeletonRecoveryScore } from '@/components/ui';
 
 export default function DashboardLoading() {
@@ -62,25 +62,6 @@ export default function DashboardLoading() {
         </div>
       </main>
 
-      {/* Bottom navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border bottom-nav-safe">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex items-center justify-around py-2">
-            <div className="flex flex-col items-center gap-1 py-2 px-4 text-primary">
-              <Moon className="w-5 h-5" />
-              <span className="text-xs font-medium">Today</span>
-            </div>
-            <div className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
-              <History className="w-5 h-5" />
-              <span className="text-xs">History</span>
-            </div>
-            <div className="flex flex-col items-center gap-1 py-2 px-4 text-text-muted">
-              <Settings className="w-5 h-5" />
-              <span className="text-xs">Settings</span>
-            </div>
-          </div>
-        </div>
-      </nav>
     </div>
   );
 }
