@@ -20,8 +20,8 @@
                             <imageView contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="SplashIcon" translatesAutoresizingMaskIntoConstraints="NO" id="moonImage">
                                 <rect key="frame" x="96.5" y="280" width="200" height="124"/>
                                 <constraints>
-                                    <constraint firstAttribute="width" constant="200" id="moonW"/>
-                                    <constraint firstAttribute="height" constant="124" id="moonH"/>
+                                    <constraint firstAttribute="width" constant="220" id="moonW"/>
+                                    <constraint firstAttribute="height" constant="181" id="moonH"/>
                                 </constraints>
                             </imageView>
                             <!-- RECOVER label -->
@@ -62,7 +62,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="SplashIcon" width="662" height="410"/>
+        <image name="SplashIcon" width="683" height="561"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
