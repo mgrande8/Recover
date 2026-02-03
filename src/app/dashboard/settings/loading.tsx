@@ -1,4 +1,4 @@
-import { Moon, History, Settings } from 'lucide-react';
+import { Moon, History, User } from 'lucide-react';
 import { Skeleton } from '@/components/ui';
 
 export default function SettingsLoading() {
@@ -66,8 +66,8 @@ export default function SettingsLoading() {
               <span className="text-xs">History</span>
             </div>
             <div className="flex flex-col items-center gap-1 py-2 px-4 text-primary">
-              <Settings className="w-5 h-5" />
-              <span className="text-xs font-medium">Settings</span>
+              <User className="w-5 h-5" />
+              <span className="text-xs font-medium">Profile</span>
             </div>
           </div>
         </div>
