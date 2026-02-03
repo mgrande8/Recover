@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: process.env.CAPACITOR_BUILD === 'true',
   },
+
+  // Cache visited pages on the client for faster tab switching
+  // Dynamic pages stay cached for 30s so switching tabs feels instant
+  experimental: {
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+  },
 };
 
 export default nextConfig;
