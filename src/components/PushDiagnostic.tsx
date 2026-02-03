@@ -18,6 +18,12 @@ export function PushDiagnostic() {
     setLogs([]);
     setRunning(true);
 
+    // Step 0: Check for pending token from earlier registration
+    const pendingToken = localStorage.getItem('pendingPushToken');
+    if (pendingToken) {
+      log(`Found pending token in localStorage: ${pendingToken.substring(0, 50)}...`, 'info');
+    }
+
     // Step 1: Check Capacitor
     log('Checking Capacitor bridge...');
     const cap = (window as any).Capacitor;
@@ -38,11 +44,19 @@ export function PushDiagnostic() {
       return;
     }
 
+    // Check Capacitor bridge details
+    const plugins = cap.Plugins ? Object.keys(cap.Plugins) : [];
+    log(`Registered native plugins: ${plugins.length > 0 ? plugins.join(', ') : 'none detected'}`, plugins.length > 0 ? 'info' : 'error');
+
     // Step 2: Import plugin
     log('Loading PushNotifications plugin...');
     try {
       const { PushNotifications } = await import('@capacitor/push-notifications');
       log('Plugin loaded', 'success');
+
+      // Clear ALL existing listeners first to avoid conflicts
+      log('Clearing existing listeners...');
+      await PushNotifications.removeAllListeners();
 
       // Step 3: Check permissions
       log('Checking permissions...');
@@ -65,49 +79,74 @@ export function PushDiagnostic() {
       }
 
       // Step 4: Register for push
-      log('Registering with APNs...');
+      log('Setting up listeners...');
 
-      // Set up one-time listeners for this diagnostic
+      let listenerFired = false;
+
       const registrationPromise = new Promise<string>((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error('Registration timed out after 10s')), 10000);
+        const timeout = setTimeout(() => {
+          if (!listenerFired) {
+            reject(new Error('Registration timed out after 15s - native side did not respond'));
+          }
+        }, 15000);
 
         PushNotifications.addListener('registration', (token) => {
+          listenerFired = true;
           clearTimeout(timeout);
           resolve(token.value);
         });
 
         PushNotifications.addListener('registrationError', (error) => {
+          listenerFired = true;
           clearTimeout(timeout);
-          reject(new Error(error.error));
+          reject(new Error(`APNs rejected: ${JSON.stringify(error)}`));
         });
       });
 
-      await PushNotifications.register();
-      log('Register() called, waiting for APNs response...');
-
-      const token = await registrationPromise;
-      log(`APNs token received: ${token.substring(0, 20)}...`, 'success');
-
-      // Step 5: Save token to server
-      log('Saving token to server...');
-      const response = await fetch('/api/push/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, platform }),
-      });
-
-      if (response.ok) {
-        log('Token saved to database!', 'success');
-      } else {
-        const err = await response.json();
-        log(`Failed to save token: ${JSON.stringify(err)}`, 'error');
+      log('Calling register()...');
+      try {
+        await PushNotifications.register();
+        log('register() completed, waiting for native callback...', 'success');
+      } catch (regError: any) {
+        log(`register() threw error: ${regError.message || regError}`, 'error');
+        setRunning(false);
+        return;
       }
 
-      // Clean up listeners
+      try {
+        const token = await registrationPromise;
+        log(`APNs token received: ${token.substring(0, 30)}...`, 'success');
+        log(`Full token length: ${token.length} chars`, 'info');
+
+        // Step 5: Save token to server
+        log('Saving token to server...');
+        const response = await fetch('/api/push/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, platform }),
+        });
+
+        if (response.ok) {
+          log('Token saved to database!', 'success');
+          log('Push notifications are fully configured!', 'success');
+        } else {
+          const err = await response.json();
+          log(`Server rejected token: ${JSON.stringify(err)}`, 'error');
+        }
+      } catch (waitError: any) {
+        log(`${waitError.message}`, 'error');
+        log('The native iOS app is not returning a push token.', 'error');
+        log('This usually means:', 'info');
+        log('1. Push Notifications capability not enabled in Xcode signing', 'info');
+        log('2. App needs to be rebuilt with push entitlement', 'info');
+        log('3. Try: iPhone Settings > General > VPN & Device Mgmt (if dev build)', 'info');
+      }
+
+      // Clean up
       await PushNotifications.removeAllListeners();
 
     } catch (error: any) {
-      log(`Error: ${error.message || error}`, 'error');
+      log(`Plugin error: ${error.message || JSON.stringify(error)}`, 'error');
     }
 
     setRunning(false);
@@ -124,7 +163,7 @@ export function PushDiagnostic() {
       if (response.ok) {
         log(`Test result: sent=${data.sent}, failed=${data.failed}`, data.sent > 0 ? 'success' : 'error');
         if (data.sent === 0 && data.failed === 0) {
-          log('No device tokens found. Run diagnostic first.', 'error');
+          log('No device tokens found in database.', 'error');
         }
       } else {
         log(`Test failed: ${data.error}`, 'error');
@@ -158,7 +197,7 @@ export function PushDiagnostic() {
       </div>
 
       {logs.length > 0 && (
-        <div className="bg-background rounded-lg p-3 max-h-64 overflow-y-auto space-y-1">
+        <div className="bg-background rounded-lg p-3 max-h-80 overflow-y-auto space-y-1">
           {logs.map((entry, i) => (
             <div key={i} className="text-xs font-mono">
               <span className="text-text-muted">{entry.time}</span>{' '}
