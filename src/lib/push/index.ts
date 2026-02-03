@@ -154,7 +154,7 @@ async function sendAPNs(token: string, payload: PushNotificationPayload): Promis
   const teamId = process.env.APNS_TEAM_ID;
   const keyId = process.env.APNS_KEY_ID;
   const privateKey = process.env.APNS_PRIVATE_KEY;
-  const bundleId = process.env.APNS_BUNDLE_ID || 'com.recover.app';
+  const bundleId = process.env.APNS_BUNDLE_ID || 'com.mgrande8.recover';
 
   if (!teamId || !keyId || !privateKey) {
     console.error('APNs credentials not configured. Set APNS_TEAM_ID, APNS_KEY_ID, APNS_PRIVATE_KEY');

@@ -505,6 +505,11 @@ export default function SleepLogPage() {
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
+                  onFocus={(e) => {
+                    setTimeout(() => {
+                      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
+                  }}
                   placeholder="Anything that affected your sleep? Dreams, stress, late meal..."
                   rows={3}
                   className="w-full bg-background border border-border rounded-lg py-2.5 px-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none"

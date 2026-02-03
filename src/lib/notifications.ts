@@ -46,20 +46,36 @@ export async function createStreakNotification(
 ): Promise<void> {
   const messages: Record<number, { title: string; message: string }> = {
     3: {
-      title: '3-Day Streak!',
+      title: '🔥 3-Day Streak!',
       message: "You're building a great habit! Keep logging your sleep.",
     },
     7: {
-      title: '1 Week Streak!',
-      message: 'One full week of tracking! Your sleep data is getting valuable.',
+      title: '🔥 7-Day Streak!',
+      message: 'One full week of consistent tracking! Your sleep data is getting valuable.',
     },
     14: {
-      title: '2 Week Streak!',
+      title: '⭐ 14-Day Streak!',
       message: "Two weeks strong! You're committed to better sleep.",
     },
     30: {
-      title: '30-Day Streak!',
+      title: '🏆 30-Day Streak!',
       message: 'Amazing! A full month of sleep tracking. You deserve this win.',
+    },
+    60: {
+      title: '🏆 60-Day Streak!',
+      message: 'Two months of consistency! Your sleep patterns are well-documented.',
+    },
+    90: {
+      title: '👑 90-Day Streak!',
+      message: 'Three months straight! Sleep tracking is part of your routine now.',
+    },
+    100: {
+      title: '👑 100-Day Streak!',
+      message: 'Triple digits! 100 days of dedication to better sleep.',
+    },
+    365: {
+      title: '🎉 365-Day Streak!',
+      message: "A full year of sleep tracking! You're an absolute legend.",
     },
   };
 

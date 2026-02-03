@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui';
 import { ManageSubscriptionButton } from '@/components/ManageSubscriptionButton';
 import { ProUpgradeSuccessModal } from '@/components/ProUpgradeSuccessModal';
+import { PushDiagnostic } from '@/components/PushDiagnostic';
 
 // Bottom navigation component
 function BottomNav() {
@@ -234,6 +235,9 @@ export default async function SettingsPage() {
             Delete Account
           </Button>
         </Link>
+
+        {/* Push Notification Diagnostic */}
+        <PushDiagnostic />
 
         {/* App info */}
         <div className="text-center text-text-muted text-sm">

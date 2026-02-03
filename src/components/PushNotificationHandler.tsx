@@ -108,6 +108,36 @@ export function PushNotificationHandler() {
 
     // Small delay to let the page settle
     setTimeout(initPushNotifications, 500);
+
+    // Check for pending push token that was stored before user was authenticated
+    const registerPendingToken = async () => {
+      const pending = localStorage.getItem('pendingPushToken');
+      if (!pending) return;
+
+      try {
+        const { token, platform } = JSON.parse(pending);
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user && token) {
+          console.log('[Push] Found pending token, registering now...');
+          const response = await fetch('/api/push/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, platform }),
+          });
+
+          if (response.ok) {
+            console.log('[Push] ✓ Pending token registered');
+            localStorage.removeItem('pendingPushToken');
+          }
+        }
+      } catch (error) {
+        console.error('[Push] Error registering pending token:', error);
+      }
+    };
+
+    setTimeout(registerPendingToken, 1000);
   }, []);
 
   return null;
