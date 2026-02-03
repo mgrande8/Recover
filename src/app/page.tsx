@@ -1,7 +1,15 @@
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Moon, Zap } from 'lucide-react';
+import { createClient } from '@/lib/supabase/server';
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  // Redirect logged-in users straight to dashboard
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    redirect('/dashboard');
+  }
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0A0E1A] via-[#0D1220] to-[#0A0E1A] flex flex-col items-center justify-center px-6 pt-safe pb-safe">
       {/* Subtle background pattern overlay */}
@@ -20,12 +28,12 @@ export default function LandingPage() {
         </div>
 
         {/* App name */}
-        <h1 className="text-5xl sm:text-6xl font-bold text-text-primary tracking-tight mb-4">
+        <h1 className="text-5xl sm:text-6xl font-bold text-text-primary tracking-tight mb-10">
           RECOVER
         </h1>
 
         {/* Tagline */}
-        <p className="text-xl text-text-secondary font-normal mb-12">
+        <p className="text-lg text-text-secondary font-normal mb-14">
           Sleep Better. Perform Better.
         </p>
 

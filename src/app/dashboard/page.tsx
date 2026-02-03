@@ -33,6 +33,7 @@ import {
 import type { Profile, SleepLog, ChecklistLog } from '@/types';
 import { DashboardProCharts } from '@/components/DashboardProCharts';
 import { ShareStats } from '@/components/ShareStats';
+import { ClientGreeting } from '@/components/ClientGreeting';
 
 // Recovery Score display component
 function RecoveryScoreCard({
@@ -349,14 +350,6 @@ export default async function DashboardPage() {
   const hasLogs = sleepLogs && sleepLogs.length > 0;
   const latestLog = hasLogs ? sleepLogs[0] : null;
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return 'Good morning';
-    if (hour >= 12 && hour < 17) return 'Good afternoon';
-    if (hour >= 17 && hour < 21) return 'Good evening';
-    return 'Good night';
-  };
-
   const userName = profile?.name || profile?.email?.split('@')[0] || 'there';
 
   // Check Pro status with expiration validation
@@ -401,9 +394,7 @@ export default async function DashboardPage() {
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Welcome message */}
         <div>
-          <h1 className="text-2xl font-bold text-text-primary mb-1">
-            {getGreeting()}, {userName}!
-          </h1>
+          <ClientGreeting name={userName} />
           <p className="text-text-secondary">
             {hasLogs
               ? `Here's your recovery from last night.`

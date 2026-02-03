@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -113,6 +113,8 @@ export default function SleepLogPage() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [existingLog, setExistingLog] = useState<boolean>(false);
+  const [notesActive, setNotesActive] = useState(false);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
 
   // Get initial date from URL params or default to yesterday
   const initialDate = searchParams.get('date') || getYesterdayDate();
@@ -300,7 +302,7 @@ export default function SleepLogPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-16">
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-10 pt-safe">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center">
@@ -503,13 +505,32 @@ export default function SleepLogPage() {
                   Notes (optional)
                 </label>
                 <textarea
+                  ref={notesRef}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  onFocus={(e) => {
-                    setTimeout(() => {
-                      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }, 300);
+                  onFocus={() => {
+                    setNotesActive(true);
+                    // Aggressively scroll the notes card to top of viewport
+                    const scrollToNotes = () => {
+                      const el = notesRef.current?.closest('.bg-card');
+                      if (el) {
+                        const rect = el.getBoundingClientRect();
+                        window.scrollBy({ top: rect.top - 60, behavior: 'smooth' });
+                      }
+                    };
+                    setTimeout(scrollToNotes, 100);
+                    setTimeout(scrollToNotes, 300);
+                    setTimeout(scrollToNotes, 500);
+                    setTimeout(scrollToNotes, 800);
+                    // Also respond to viewport resize (keyboard animation)
+                    if (window.visualViewport) {
+                      const vv = window.visualViewport;
+                      const handler = () => scrollToNotes();
+                      vv.addEventListener('resize', handler);
+                      setTimeout(() => vv.removeEventListener('resize', handler), 2000);
+                    }
                   }}
+                  onBlur={() => setNotesActive(false)}
                   placeholder="Anything that affected your sleep? Dreams, stress, late meal..."
                   rows={3}
                   className="w-full bg-background border border-border rounded-lg py-2.5 px-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none"
@@ -526,6 +547,9 @@ export default function SleepLogPage() {
               : (existingLog ? 'Update Sleep Log' : 'Save Sleep Log')
             }
           </Button>
+
+          {/* Keyboard spacer - pushes content up when notes textarea is focused on iOS */}
+          {notesActive && <div style={{ height: '50vh' }} />}
         </form>
       </main>
     </div>
