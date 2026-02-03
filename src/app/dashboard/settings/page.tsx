@@ -17,7 +17,6 @@ import {
 import { Button } from '@/components/ui';
 import { ManageSubscriptionButton } from '@/components/ManageSubscriptionButton';
 import { ProUpgradeSuccessModal } from '@/components/ProUpgradeSuccessModal';
-import { HiddenPushDiagnostic } from '@/components/PushDiagnostic';
 
 // Settings item component
 function SettingsItem({
@@ -203,8 +202,8 @@ export default async function SettingsPage() {
           </Button>
         </Link>
 
-        {/* App info - tap version 5 times to show push diagnostic */}
-        <HiddenPushDiagnostic />
+        {/* App version */}
+        <p className="text-center text-text-muted text-xs mt-8">Recover v1.0.2</p>
       </main>
 
     </div>
