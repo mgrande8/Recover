@@ -34,6 +34,7 @@ import type { Profile, SleepLog, ChecklistLog } from '@/types';
 import { DashboardProCharts } from '@/components/DashboardProCharts';
 import { ShareStats } from '@/components/ShareStats';
 import { ClientGreeting } from '@/components/ClientGreeting';
+import { ReviewPrompt } from '@/components/ReviewPrompt';
 
 // Recovery Score display component
 function RecoveryScoreCard({
@@ -359,6 +360,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      {/* App Store review prompt - shows at 7+ day streak */}
+      <ReviewPrompt currentStreak={currentStreak} />
+
       {/* Header */}
       <header className="bg-card border-b border-border pt-safe">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
