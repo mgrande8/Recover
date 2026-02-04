@@ -12,10 +12,13 @@ import {
   Clock,
   Instagram,
   Twitter,
+  Check,
 } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
 import type { SleepLog, Profile } from '@/types';
 import { calculateRecoveryScore, formatDuration } from '@/lib/utils';
+
+const APP_STORE_URL = 'https://apps.apple.com/app/id6758255662';
 
 interface ShareStatsProps {
   sleepLogs: SleepLog[];
@@ -26,6 +29,7 @@ interface ShareStatsProps {
 export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   if (sleepLogs.length === 0) return null;
@@ -50,31 +54,20 @@ export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProp
     trend = Math.round(avgScore - olderAvg);
   }
 
-  // Generate share text for Twitter
-  const shareText = `My sleep stats from Recover:
-
-Recovery Score: ${latestScore}
-7-Day Average: ${avgScore}${currentStreak > 0 ? `\nStreak: ${currentStreak} days` : ''}
-
-Track your sleep with Recover`;
-
-  const shareUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  // Share text
+  const shareText = `My sleep stats from Recover:\n\nRecovery Score: ${latestScore}\n7-Day Average: ${avgScore}${currentStreak > 0 ? `\nStreak: ${currentStreak} days` : ''}\n\nTrack your sleep with Recover\n${APP_STORE_URL}`;
 
   // Generate image from card
   const generateImage = async (width?: number, height?: number): Promise<Blob | null> => {
     if (!cardRef.current) return null;
 
     try {
-      // Create a clone of the card for rendering
       const clone = cardRef.current.cloneNode(true) as HTMLElement;
-
-      // Apply styles for image generation
       clone.style.backgroundColor = '#0a0a0f';
       clone.style.padding = '24px';
       clone.style.borderRadius = '16px';
 
       if (width && height) {
-        // For Instagram Stories, create a wrapper with the correct dimensions
         const wrapper = document.createElement('div');
         wrapper.style.width = `${width}px`;
         wrapper.style.height = `${height}px`;
@@ -84,7 +77,6 @@ Track your sleep with Recover`;
         wrapper.style.justifyContent = 'center';
         wrapper.style.padding = '80px';
 
-        // Scale up the card for better quality
         clone.style.width = '100%';
         clone.style.maxWidth = '920px';
         clone.style.transform = 'scale(1)';
@@ -104,7 +96,6 @@ Track your sleep with Recover`;
         const response = await fetch(dataUrl);
         return await response.blob();
       } else {
-        // Standard image
         const dataUrl = await htmlToImage.toPng(cardRef.current, {
           quality: 1,
           pixelRatio: 2,
@@ -120,8 +111,21 @@ Track your sleep with Recover`;
     }
   };
 
-  // Download image
-  const downloadImage = async (blob: Blob, filename: string) => {
+  // Share using native share sheet (works in iOS WKWebView)
+  const nativeShare = async (blob: Blob, filename: string, text?: string) => {
+    const file = new File([blob], filename, { type: 'image/png' });
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      await navigator.share({
+        ...(text ? { text } : {}),
+        files: [file],
+      });
+      return true;
+    }
+    return false;
+  };
+
+  // Fallback download for desktop browsers
+  const downloadImage = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -135,10 +139,22 @@ Track your sleep with Recover`;
   // Handle Save as Image
   const handleSaveImage = async () => {
     setIsGenerating(true);
+    setSaveSuccess(false);
     try {
       const blob = await generateImage();
       if (blob) {
-        await downloadImage(blob, 'recover-stats.png');
+        // Try native share (lets user save to Photos on iOS)
+        const shared = await nativeShare(blob, 'recover-stats.png');
+        if (!shared) {
+          // Fallback for desktop
+          downloadImage(blob, 'recover-stats.png');
+        }
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 2000);
+      }
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        console.error('Save image error:', error);
       }
     } finally {
       setIsGenerating(false);
@@ -150,20 +166,15 @@ Track your sleep with Recover`;
     setIsGenerating(true);
     try {
       const blob = await generateImage();
-      if (blob && navigator.share) {
-        const file = new File([blob], 'recover-stats.png', { type: 'image/png' });
-        await navigator.share({
-          text: shareText,
-          files: [file],
-        });
-      } else {
-        // Fallback: open SMS with text only
-        const smsText = encodeURIComponent(shareText);
-        window.location.href = `sms:?&body=${smsText}`;
+      if (blob) {
+        const shared = await nativeShare(blob, 'recover-stats.png', shareText);
+        if (!shared) {
+          const smsText = encodeURIComponent(shareText);
+          window.location.href = `sms:?&body=${smsText}`;
+        }
       }
     } catch (error) {
       if ((error as Error).name !== 'AbortError') {
-        // Fallback to text-only SMS
         const smsText = encodeURIComponent(shareText);
         window.location.href = `sms:?&body=${smsText}`;
       }
@@ -176,12 +187,20 @@ Track your sleep with Recover`;
   const handleInstagramShare = async () => {
     setIsGenerating(true);
     try {
-      // Instagram Stories dimensions: 1080x1920
+      // Generate Stories-sized image (1080x1920)
       const blob = await generateImage(1080, 1920);
       if (blob) {
-        await downloadImage(blob, 'recover-story.png');
-        // Show instruction
-        alert('Image saved! Open Instagram and share to your Story.');
+        // Use native share sheet - user can pick Instagram Stories
+        const shared = await nativeShare(blob, 'recover-story.png');
+        if (!shared) {
+          // Fallback: download image
+          downloadImage(blob, 'recover-story.png');
+          alert('Image saved! Open Instagram and share to your Story.');
+        }
+      }
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        console.error('Instagram share error:', error);
       }
     } finally {
       setIsGenerating(false);
@@ -189,22 +208,9 @@ Track your sleep with Recover`;
   };
 
   // Handle Twitter/X share
-  const handleTwitterShare = async () => {
-    setIsGenerating(true);
-    try {
-      // For Twitter, we'll open the intent with text
-      // Image sharing via URL requires hosting the image
-      const tweetText = encodeURIComponent(`My sleep stats from Recover:
-
-Recovery Score: ${latestScore}
-7-Day Average: ${avgScore}${currentStreak > 0 ? `\nStreak: ${currentStreak} days` : ''}
-
-Track your sleep at ${shareUrl}`);
-
-      window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
-    } finally {
-      setIsGenerating(false);
-    }
+  const handleTwitterShare = () => {
+    const tweetText = encodeURIComponent(`My sleep stats from Recover:\n\nRecovery Score: ${latestScore}\n7-Day Average: ${avgScore}${currentStreak > 0 ? `\nStreak: ${currentStreak} days` : ''}\n\nTrack your sleep at ${APP_STORE_URL}`);
+    window.open(`https://twitter.com/intent/tweet?text=${tweetText}`, '_blank');
   };
 
   return (
@@ -220,7 +226,12 @@ Track your sleep at ${shareUrl}`);
 
       {/* Share Modal */}
       {isOpen && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsOpen(false);
+          }}
+        >
           <div className="bg-card border border-border rounded-2xl w-full max-w-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-200">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
@@ -288,10 +299,17 @@ Track your sleep at ${shareUrl}`);
             </div>
 
             {/* Share options */}
-            <div className="px-4 pb-4">
+            <div className="px-4 pb-6">
               {isGenerating && (
                 <div className="text-center py-2 mb-3">
                   <p className="text-sm text-text-muted">Generating image...</p>
+                </div>
+              )}
+
+              {saveSuccess && (
+                <div className="flex items-center justify-center gap-2 py-2 mb-3 text-success">
+                  <Check className="w-4 h-4" />
+                  <p className="text-sm font-medium">Image ready!</p>
                 </div>
               )}
 
