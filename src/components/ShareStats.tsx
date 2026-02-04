@@ -12,7 +12,6 @@ import {
   Clock,
   Instagram,
   Twitter,
-  Check,
 } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
 import type { SleepLog, Profile } from '@/types';
@@ -29,8 +28,7 @@ interface ShareStatsProps {
 export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [previewImage, setPreviewImage] = useState<{ dataUrl: string; mode: 'save' | 'instagram' } | null>(null);
+  const [previewImage, setPreviewImage] = useState<{ dataUrl: string; blob: Blob; mode: 'save' | 'instagram' } | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
   if (sleepLogs.length === 0) return null;
@@ -55,65 +53,120 @@ export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProp
     trend = Math.round(avgScore - olderAvg);
   }
 
+  // Score color for story image
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return '#22c55e';
+    if (score >= 60) return '#eab308';
+    return '#ef4444';
+  };
+
   // Share text
   const shareText = `My sleep stats from Recover:\n\nRecovery Score: ${latestScore}\n7-Day Average: ${avgScore}${currentStreak > 0 ? `\nStreak: ${currentStreak} days` : ''}\n\nTrack your sleep with Recover\n${APP_STORE_URL}`;
 
-  // Generate image from card
-  const generateImage = async (width?: number, height?: number): Promise<Blob | null> => {
+  // Generate image from the preview card
+  const generateCardImage = async (): Promise<{ dataUrl: string; blob: Blob } | null> => {
     if (!cardRef.current) return null;
-
     try {
-      const clone = cardRef.current.cloneNode(true) as HTMLElement;
-      clone.style.backgroundColor = '#0a0a0f';
-      clone.style.padding = '24px';
-      clone.style.borderRadius = '16px';
-
-      if (width && height) {
-        const wrapper = document.createElement('div');
-        wrapper.style.width = `${width}px`;
-        wrapper.style.height = `${height}px`;
-        wrapper.style.backgroundColor = '#0a0a0f';
-        wrapper.style.display = 'flex';
-        wrapper.style.alignItems = 'center';
-        wrapper.style.justifyContent = 'center';
-        wrapper.style.padding = '80px';
-
-        clone.style.width = '100%';
-        clone.style.maxWidth = '920px';
-        clone.style.transform = 'scale(1)';
-
-        wrapper.appendChild(clone);
-        document.body.appendChild(wrapper);
-
-        const dataUrl = await htmlToImage.toPng(wrapper, {
-          width,
-          height,
-          quality: 1,
-          pixelRatio: 2,
-        });
-
-        document.body.removeChild(wrapper);
-
-        const response = await fetch(dataUrl);
-        return await response.blob();
-      } else {
-        const dataUrl = await htmlToImage.toPng(cardRef.current, {
-          quality: 1,
-          pixelRatio: 2,
-          backgroundColor: '#0a0a0f',
-        });
-
-        const response = await fetch(dataUrl);
-        return await response.blob();
-      }
+      const dataUrl = await htmlToImage.toPng(cardRef.current, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: '#0a0a0f',
+      });
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      return { dataUrl, blob };
     } catch (error) {
       console.error('Error generating image:', error);
       return null;
     }
   };
 
-  // Share using native share sheet (works in iOS WKWebView)
-  const nativeShare = async (blob: Blob, filename: string, text?: string) => {
+  // Generate full-screen Instagram Story image (1080x1920)
+  const generateStoryImage = async (): Promise<{ dataUrl: string; blob: Blob } | null> => {
+    const story = document.createElement('div');
+    story.style.cssText = `
+      width: 1080px;
+      height: 1920px;
+      background: linear-gradient(180deg, #08081a 0%, #0f0f2e 35%, #111130 50%, #0d0d24 75%, #08081a 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 140px 80px 100px;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+      color: white;
+      position: fixed;
+      left: -9999px;
+      top: 0;
+      box-sizing: border-box;
+    `;
+
+    const trendHtml = trend !== 0 ? `
+      <div style="font-size: 32px; font-weight: 600; color: ${trend > 0 ? '#22c55e' : '#ef4444'}; margin-top: 48px;">
+        ${trend > 0 ? '↑' : '↓'} ${Math.abs(trend)} points vs last week
+      </div>
+    ` : '';
+
+    story.innerHTML = `
+      <div style="text-align: center; width: 100%;">
+        <div style="display: inline-flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 16px;">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+          </svg>
+          <span style="font-size: 56px; font-weight: 800; letter-spacing: 8px;">RECOVER</span>
+        </div>
+        <div style="font-size: 28px; color: #6b6b8a; font-weight: 400;">Sleep Better. Perform Better.</div>
+      </div>
+
+      <div style="text-align: center; width: 100%;">
+        <div style="font-size: 24px; color: #6b6b8a; text-transform: uppercase; letter-spacing: 5px; margin-bottom: 24px; font-weight: 500;">Recovery Score</div>
+        <div style="font-size: 200px; font-weight: 800; color: ${getScoreColor(latestScore)}; line-height: 1; margin-bottom: 56px;">${latestScore}</div>
+
+        <div style="display: flex; gap: 24px; justify-content: center; width: 100%;">
+          <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; padding: 36px 20px; flex: 1;">
+            <div style="font-size: 52px; font-weight: 700; margin-bottom: 8px;">${avgScore}</div>
+            <div style="font-size: 22px; color: #6b6b8a;">7-Day Avg</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; padding: 36px 20px; flex: 1;">
+            <div style="font-size: 52px; font-weight: 700; margin-bottom: 8px;">${formatDuration(avgDuration)}</div>
+            <div style="font-size: 22px; color: #6b6b8a;">Avg Sleep</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; padding: 36px 20px; flex: 1;">
+            <div style="font-size: 52px; font-weight: 700; margin-bottom: 8px;">${currentStreak}</div>
+            <div style="font-size: 22px; color: #6b6b8a;">Day Streak</div>
+          </div>
+        </div>
+        ${trendHtml}
+      </div>
+
+      <div style="text-align: center; width: 100%;">
+        <div style="font-size: 24px; color: #6b6b8a; margin-bottom: 8px;">Track your sleep recovery</div>
+        <div style="font-size: 26px; color: #6366f1; font-weight: 600;">Download Recover on the App Store</div>
+      </div>
+    `;
+
+    document.body.appendChild(story);
+
+    try {
+      const dataUrl = await htmlToImage.toPng(story, {
+        width: 1080,
+        height: 1920,
+        quality: 1,
+        pixelRatio: 1,
+      });
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      return { dataUrl, blob };
+    } catch (error) {
+      console.error('Error generating story:', error);
+      return null;
+    } finally {
+      document.body.removeChild(story);
+    }
+  };
+
+  // Share image via native share sheet
+  const shareImageFile = async (blob: Blob, filename: string, text?: string) => {
     const file = new File([blob], filename, { type: 'image/png' });
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       await navigator.share({
@@ -125,36 +178,13 @@ export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProp
     return false;
   };
 
-  // Convert blob to data URL
-  const blobToDataUrl = (blob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
-
-  // Fallback download for desktop browsers
-  const downloadImage = (blob: Blob, filename: string) => {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  // Handle Save as Image - shows preview for long-press save on iOS
+  // Handle Save - generate and show preview
   const handleSaveImage = async () => {
     setIsGenerating(true);
     try {
-      const blob = await generateImage();
-      if (blob) {
-        const dataUrl = await blobToDataUrl(blob);
-        setPreviewImage({ dataUrl, mode: 'save' });
+      const result = await generateCardImage();
+      if (result) {
+        setPreviewImage({ ...result, mode: 'save' });
       }
     } catch (error) {
       console.error('Save image error:', error);
@@ -167,9 +197,9 @@ export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProp
   const handleMessagesShare = async () => {
     setIsGenerating(true);
     try {
-      const blob = await generateImage();
-      if (blob) {
-        const shared = await nativeShare(blob, 'recover-stats.png', shareText);
+      const result = await generateCardImage();
+      if (result) {
+        const shared = await shareImageFile(result.blob, 'recover-stats.png', shareText);
         if (!shared) {
           const smsText = encodeURIComponent(shareText);
           window.location.href = `sms:?&body=${smsText}`;
@@ -185,15 +215,13 @@ export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProp
     }
   };
 
-  // Handle Instagram Stories - shows preview for long-press save, then open Instagram
+  // Handle Instagram Stories - generate story and show preview
   const handleInstagramShare = async () => {
     setIsGenerating(true);
     try {
-      // Generate Stories-sized image (1080x1920)
-      const blob = await generateImage(1080, 1920);
-      if (blob) {
-        const dataUrl = await blobToDataUrl(blob);
-        setPreviewImage({ dataUrl, mode: 'instagram' });
+      const result = await generateStoryImage();
+      if (result) {
+        setPreviewImage({ ...result, mode: 'instagram' });
       }
     } catch (error) {
       console.error('Instagram share error:', error);
@@ -202,9 +230,17 @@ export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProp
     }
   };
 
-  // Open Instagram app
-  const openInstagram = () => {
-    window.location.href = 'instagram://app';
+  // Share from preview overlay using native share sheet
+  const handlePreviewShare = async () => {
+    if (!previewImage) return;
+    try {
+      const filename = previewImage.mode === 'instagram' ? 'recover-story.png' : 'recover-stats.png';
+      await shareImageFile(previewImage.blob, filename);
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        console.error('Share error:', error);
+      }
+    }
   };
 
   // Handle Twitter/X share
@@ -306,13 +342,6 @@ export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProp
                 </div>
               )}
 
-              {saveSuccess && (
-                <div className="flex items-center justify-center gap-2 py-2 mb-3 text-success">
-                  <Check className="w-4 h-4" />
-                  <p className="text-sm font-medium">Image ready!</p>
-                </div>
-              )}
-
               <div className="grid grid-cols-4 gap-2">
                 <button
                   onClick={handleSaveImage}
@@ -352,57 +381,45 @@ export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProp
         </div>
       )}
 
-      {/* Image Preview Overlay - for long-press save on iOS */}
+      {/* Image Preview Overlay */}
       {previewImage && (
-        <div
-          className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setPreviewImage(null);
-          }}
-        >
-          {/* Close button */}
-          <button
-            onClick={() => setPreviewImage(null)}
-            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors z-10 pt-safe"
-          >
-            <X className="w-6 h-6" />
-          </button>
+        <div className="fixed inset-0 bg-black z-[60] flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 pt-safe">
+            <button
+              onClick={() => setPreviewImage(null)}
+              className="p-2 text-white/70 hover:text-white transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <p className="text-white/60 text-sm">Preview</p>
+            <div className="w-10" />
+          </div>
 
-          {/* Instructions */}
-          <p className="text-white/90 text-sm font-medium mb-4 text-center pt-safe">
-            {previewImage.mode === 'instagram'
-              ? 'Long press image to save, then tap Open Instagram'
-              : 'Long press the image to save to Photos'}
-          </p>
-
-          {/* The generated image */}
-          <div className={`flex-1 flex items-center justify-center w-full ${previewImage.mode === 'instagram' ? 'max-w-[270px]' : 'max-w-sm'}`}>
+          {/* Image */}
+          <div className="flex-1 flex items-center justify-center px-6 overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={previewImage.dataUrl}
               alt="Recover Stats"
-              className="max-w-full max-h-full rounded-xl object-contain"
-              style={{ WebkitTouchCallout: 'default' }}
+              className={`max-h-full rounded-xl object-contain ${previewImage.mode === 'instagram' ? 'max-w-[260px]' : 'max-w-full'}`}
             />
           </div>
 
-          {/* Action buttons */}
-          <div className="mt-4 flex gap-3 pb-safe">
-            {previewImage.mode === 'instagram' && (
-              <button
-                onClick={openInstagram}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full font-medium"
-              >
-                <Instagram className="w-5 h-5" />
-                Open Instagram
-              </button>
-            )}
+          {/* Actions */}
+          <div className="px-6 py-4 pb-safe space-y-3">
             <button
-              onClick={() => setPreviewImage(null)}
-              className="px-6 py-3 bg-white/10 text-white rounded-full font-medium"
+              onClick={handlePreviewShare}
+              className="w-full flex items-center justify-center gap-2 py-3.5 bg-primary text-white rounded-xl font-semibold text-base"
             >
-              Done
+              <Share2 className="w-5 h-5" />
+              {previewImage.mode === 'instagram' ? 'Share to Instagram' : 'Save to Photos'}
             </button>
+            <p className="text-white/40 text-xs text-center">
+              {previewImage.mode === 'instagram'
+                ? 'Select Instagram from the share menu'
+                : 'Tap "Save Image" from the share menu'}
+            </p>
           </div>
         </div>
       )}
