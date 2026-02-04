@@ -30,6 +30,7 @@ export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProp
   const [isOpen, setIsOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [previewImage, setPreviewImage] = useState<{ dataUrl: string; mode: 'save' | 'instagram' } | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
   if (sleepLogs.length === 0) return null;
@@ -124,6 +125,16 @@ export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProp
     return false;
   };
 
+  // Convert blob to data URL
+  const blobToDataUrl = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   // Fallback download for desktop browsers
   const downloadImage = (blob: Blob, filename: string) => {
     const url = URL.createObjectURL(blob);
@@ -136,26 +147,17 @@ export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProp
     URL.revokeObjectURL(url);
   };
 
-  // Handle Save as Image
+  // Handle Save as Image - shows preview for long-press save on iOS
   const handleSaveImage = async () => {
     setIsGenerating(true);
-    setSaveSuccess(false);
     try {
       const blob = await generateImage();
       if (blob) {
-        // Try native share (lets user save to Photos on iOS)
-        const shared = await nativeShare(blob, 'recover-stats.png');
-        if (!shared) {
-          // Fallback for desktop
-          downloadImage(blob, 'recover-stats.png');
-        }
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 2000);
+        const dataUrl = await blobToDataUrl(blob);
+        setPreviewImage({ dataUrl, mode: 'save' });
       }
     } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
-        console.error('Save image error:', error);
-      }
+      console.error('Save image error:', error);
     } finally {
       setIsGenerating(false);
     }
@@ -183,28 +185,26 @@ export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProp
     }
   };
 
-  // Handle Instagram Stories
+  // Handle Instagram Stories - shows preview for long-press save, then open Instagram
   const handleInstagramShare = async () => {
     setIsGenerating(true);
     try {
       // Generate Stories-sized image (1080x1920)
       const blob = await generateImage(1080, 1920);
       if (blob) {
-        // Use native share sheet - user can pick Instagram Stories
-        const shared = await nativeShare(blob, 'recover-story.png');
-        if (!shared) {
-          // Fallback: download image
-          downloadImage(blob, 'recover-story.png');
-          alert('Image saved! Open Instagram and share to your Story.');
-        }
+        const dataUrl = await blobToDataUrl(blob);
+        setPreviewImage({ dataUrl, mode: 'instagram' });
       }
     } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
-        console.error('Instagram share error:', error);
-      }
+      console.error('Instagram share error:', error);
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  // Open Instagram app
+  const openInstagram = () => {
+    window.location.href = 'instagram://app';
   };
 
   // Handle Twitter/X share
@@ -348,6 +348,61 @@ export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProp
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Preview Overlay - for long-press save on iOS */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 bg-black/95 z-[60] flex flex-col items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setPreviewImage(null);
+          }}
+        >
+          {/* Close button */}
+          <button
+            onClick={() => setPreviewImage(null)}
+            className="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors z-10 pt-safe"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          {/* Instructions */}
+          <p className="text-white/90 text-sm font-medium mb-4 text-center pt-safe">
+            {previewImage.mode === 'instagram'
+              ? 'Long press image to save, then tap Open Instagram'
+              : 'Long press the image to save to Photos'}
+          </p>
+
+          {/* The generated image */}
+          <div className={`flex-1 flex items-center justify-center w-full ${previewImage.mode === 'instagram' ? 'max-w-[270px]' : 'max-w-sm'}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previewImage.dataUrl}
+              alt="Recover Stats"
+              className="max-w-full max-h-full rounded-xl object-contain"
+              style={{ WebkitTouchCallout: 'default' }}
+            />
+          </div>
+
+          {/* Action buttons */}
+          <div className="mt-4 flex gap-3 pb-safe">
+            {previewImage.mode === 'instagram' && (
+              <button
+                onClick={openInstagram}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full font-medium"
+              >
+                <Instagram className="w-5 h-5" />
+                Open Instagram
+              </button>
+            )}
+            <button
+              onClick={() => setPreviewImage(null)}
+              className="px-6 py-3 bg-white/10 text-white rounded-full font-medium"
+            >
+              Done
+            </button>
           </div>
         </div>
       )}
