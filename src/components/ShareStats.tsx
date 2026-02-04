@@ -83,69 +83,79 @@ export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProp
 
   // Generate full-screen Instagram Story image (1080x1920)
   const generateStoryImage = async (): Promise<{ dataUrl: string; blob: Blob } | null> => {
+    // Create a container that clips overflow so the large story element isn't visible
+    const container = document.createElement('div');
+    container.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      pointer-events: none;
+    `;
+
     const story = document.createElement('div');
     story.style.cssText = `
       width: 1080px;
       height: 1920px;
       background: linear-gradient(180deg, #08081a 0%, #0f0f2e 35%, #111130 50%, #0d0d24 75%, #08081a 100%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: space-between;
       padding: 140px 80px 100px;
       font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
       color: white;
-      position: fixed;
-      left: -9999px;
-      top: 0;
       box-sizing: border-box;
+      position: relative;
     `;
 
     const trendHtml = trend !== 0 ? `
-      <div style="font-size: 32px; font-weight: 600; color: ${trend > 0 ? '#22c55e' : '#ef4444'}; margin-top: 48px;">
-        ${trend > 0 ? '↑' : '↓'} ${Math.abs(trend)} points vs last week
+      <div style="font-size: 32px; font-weight: 600; color: ${trend > 0 ? '#22c55e' : '#ef4444'}; margin-top: 48px; text-align: center;">
+        ${trend > 0 ? '+' : ''}${trend} points vs last week
       </div>
     ` : '';
 
     story.innerHTML = `
-      <div style="text-align: center; width: 100%;">
-        <div style="display: inline-flex; align-items: center; justify-content: center; gap: 18px; margin-bottom: 16px;">
-          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
-          </svg>
-          <span style="font-size: 56px; font-weight: 800; letter-spacing: 8px;">RECOVER</span>
+      <div style="text-align: center; width: 100%; margin-bottom: 100px;">
+        <div style="margin-bottom: 16px;">
+          <span style="font-size: 56px; font-weight: 800; letter-spacing: 8px; color: #6366f1;">&#9790;</span>
+          <span style="font-size: 56px; font-weight: 800; letter-spacing: 8px; color: white; margin-left: 12px;">RECOVER</span>
         </div>
         <div style="font-size: 28px; color: #6b6b8a; font-weight: 400;">Sleep Better. Perform Better.</div>
       </div>
 
-      <div style="text-align: center; width: 100%;">
+      <div style="text-align: center; width: 100%; margin-bottom: 100px;">
         <div style="font-size: 24px; color: #6b6b8a; text-transform: uppercase; letter-spacing: 5px; margin-bottom: 24px; font-weight: 500;">Recovery Score</div>
         <div style="font-size: 200px; font-weight: 800; color: ${getScoreColor(latestScore)}; line-height: 1; margin-bottom: 56px;">${latestScore}</div>
 
-        <div style="display: flex; gap: 24px; justify-content: center; width: 100%;">
-          <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; padding: 36px 20px; flex: 1;">
-            <div style="font-size: 52px; font-weight: 700; margin-bottom: 8px;">${avgScore}</div>
-            <div style="font-size: 22px; color: #6b6b8a;">7-Day Avg</div>
-          </div>
-          <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; padding: 36px 20px; flex: 1;">
-            <div style="font-size: 52px; font-weight: 700; margin-bottom: 8px;">${formatDuration(avgDuration)}</div>
-            <div style="font-size: 22px; color: #6b6b8a;">Avg Sleep</div>
-          </div>
-          <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; padding: 36px 20px; flex: 1;">
-            <div style="font-size: 52px; font-weight: 700; margin-bottom: 8px;">${currentStreak}</div>
-            <div style="font-size: 22px; color: #6b6b8a;">Day Streak</div>
-          </div>
-        </div>
+        <table style="width: 100%; border-spacing: 24px 0; border-collapse: separate;">
+          <tr>
+            <td style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; padding: 36px 20px; text-align: center; width: 33%;">
+              <div style="font-size: 52px; font-weight: 700; margin-bottom: 8px; color: white;">${avgScore}</div>
+              <div style="font-size: 22px; color: #6b6b8a;">7-Day Avg</div>
+            </td>
+            <td style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; padding: 36px 20px; text-align: center; width: 33%;">
+              <div style="font-size: 52px; font-weight: 700; margin-bottom: 8px; color: white;">${formatDuration(avgDuration)}</div>
+              <div style="font-size: 22px; color: #6b6b8a;">Avg Sleep</div>
+            </td>
+            <td style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 28px; padding: 36px 20px; text-align: center; width: 33%;">
+              <div style="font-size: 52px; font-weight: 700; margin-bottom: 8px; color: white;">${currentStreak}</div>
+              <div style="font-size: 22px; color: #6b6b8a;">Day Streak</div>
+            </td>
+          </tr>
+        </table>
         ${trendHtml}
       </div>
 
-      <div style="text-align: center; width: 100%;">
+      <div style="text-align: center; width: 100%; position: absolute; bottom: 100px; left: 0; right: 0;">
         <div style="font-size: 24px; color: #6b6b8a; margin-bottom: 8px;">Track your sleep recovery</div>
         <div style="font-size: 26px; color: #6366f1; font-weight: 600;">Download Recover on the App Store</div>
       </div>
     `;
 
-    document.body.appendChild(story);
+    container.appendChild(story);
+    document.body.appendChild(container);
+
+    // Force layout computation
+    story.getBoundingClientRect();
 
     try {
       const dataUrl = await htmlToImage.toPng(story, {
@@ -161,7 +171,7 @@ export function ShareStats({ sleepLogs, profile, currentStreak }: ShareStatsProp
       console.error('Error generating story:', error);
       return null;
     } finally {
-      document.body.removeChild(story);
+      document.body.removeChild(container);
     }
   };
 
