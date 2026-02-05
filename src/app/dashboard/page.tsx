@@ -35,6 +35,7 @@ import { DashboardProCharts } from '@/components/DashboardProCharts';
 import { ShareStats } from '@/components/ShareStats';
 import { ClientGreeting } from '@/components/ClientGreeting';
 import { ReviewPrompt } from '@/components/ReviewPrompt';
+import { MilestoneReport } from '@/components/MilestoneReport';
 
 // Recovery Score display component
 function RecoveryScoreCard({
@@ -321,13 +322,17 @@ export default async function DashboardPage() {
     redirect('/onboarding');
   }
 
-  // Get recent sleep logs (14 days for Pro charts)
+  // Get sleep logs (up to 365 for milestone reports)
   const { data: sleepLogs } = await supabase
     .from('sleep_logs')
     .select('*')
     .eq('user_id', user.id)
     .order('date', { ascending: false })
-    .limit(14);
+    .limit(365);
+
+  // Count total unique days tracked (for milestone reports)
+  const nightLogs = sleepLogs?.filter((log) => !log.is_nap) || [];
+  const totalDaysTracked = nightLogs.length;
 
   // Get today's checklist
   const today = getTodayDate();
@@ -362,6 +367,15 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-background pb-24">
       {/* App Store review prompt - shows at 7+ day streak */}
       <ReviewPrompt currentStreak={currentStreak} />
+
+      {/* Milestone report - shows at 30, 60, 90, 180, 365 days */}
+      {hasLogs && (
+        <MilestoneReport
+          sleepLogs={sleepLogs || []}
+          profile={profile}
+          totalDaysTracked={totalDaysTracked}
+        />
+      )}
 
       {/* Header */}
       <header className="bg-card border-b border-border pt-safe">
