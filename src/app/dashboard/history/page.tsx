@@ -56,8 +56,8 @@ function SleepLogCard({ log, profile }: { log: SleepLog; profile: Profile }) {
 
   return (
     <div className="bg-card rounded-xl border border-border p-4 hover:bg-card-hover transition-all group relative">
-      {/* Delete button - top right */}
-      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Delete button - top right, always visible on mobile */}
+      <div className="absolute top-2 right-2">
         <DeleteSleepLog logId={log.id} date={formatDate(log.date)} isNap={log.is_nap} />
       </div>
 
