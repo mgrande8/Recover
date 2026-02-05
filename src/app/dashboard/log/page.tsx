@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { Button, useToast } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
-import { getYesterdayDate, formatDate } from '@/lib/utils';
+import { getYesterdayDate, getTodayDate, formatDate } from '@/lib/utils';
 
 // Rating component for quality and energy
 function RatingSelector({
@@ -116,9 +116,11 @@ export default function SleepLogPage() {
   const [notesActive, setNotesActive] = useState(false);
   const notesRef = useRef<HTMLTextAreaElement>(null);
 
-  // Get initial date from URL params or default to yesterday
-  const initialDate = searchParams.get('date') || getYesterdayDate();
+  // Get initial date from URL params
+  // Naps default to TODAY (logging a nap you took today)
+  // Night sleep defaults to YESTERDAY (logging last night's sleep)
   const initialIsNap = searchParams.get('nap') === 'true';
+  const initialDate = searchParams.get('date') || (initialIsNap ? getTodayDate() : getYesterdayDate());
 
   // Form state
   const [date, setDate] = useState(initialDate);
@@ -130,21 +132,29 @@ export default function SleepLogPage() {
   const [notes, setNotes] = useState('');
   const [isNap, setIsNap] = useState(initialIsNap);
 
-  // Load existing log data when date changes
+  // Load existing log data when date changes (only for night sleep, not naps)
   useEffect(() => {
     const loadExistingLog = async () => {
+      // Naps don't have their own entries - they add to previous night's sleep
+      // So skip loading for naps
+      if (initialIsNap) {
+        setExistingLog(false);
+        setIsLoadingData(false);
+        return;
+      }
+
       setIsLoadingData(true);
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
-        // Query by date AND is_nap to get the correct log type
+        // Query for night sleep only
         const { data } = await supabase
           .from('sleep_logs')
           .select('*')
           .eq('user_id', user.id)
           .eq('date', date)
-          .eq('is_nap', initialIsNap)
+          .eq('is_nap', false)
           .single();
 
         if (data) {
@@ -162,24 +172,24 @@ export default function SleepLogPage() {
           setEnergy(data.energy);
           setInterruptions(data.interruptions);
           setNotes(data.notes || '');
-          setIsNap(data.is_nap || false);
+          setIsNap(false);
         } else {
           setExistingLog(false);
-          // Reset to defaults for new log (keep isNap from URL param)
-          setBedtime(initialIsNap ? '14:00' : '22:30');
-          setWakeTime(initialIsNap ? '14:30' : '06:30');
+          // Reset to defaults for new log
+          setBedtime('22:30');
+          setWakeTime('06:30');
           setQuality(3);
           setEnergy(3);
           setInterruptions(0);
           setNotes('');
-          setIsNap(initialIsNap);
+          setIsNap(false);
         }
       }
       setIsLoadingData(false);
     };
 
     loadExistingLog();
-  }, [date]);
+  }, [date, initialIsNap]);
 
   // Calculate duration
   const calculateDuration = () => {
@@ -242,22 +252,65 @@ export default function SleepLogPage() {
         wakeDate.setDate(wakeDate.getDate() + 1);
       }
 
+      // For naps: add duration to previous night's sleep entry
+      if (isNap) {
+        // Find yesterday's (previous night's) sleep entry
+        const yesterday = new Date(date);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayDate = yesterday.toISOString().split('T')[0];
+
+        const { data: previousSleep, error: fetchError } = await supabase
+          .from('sleep_logs')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('date', yesterdayDate)
+          .eq('is_nap', false)
+          .single();
+
+        if (fetchError || !previousSleep) {
+          setError('No sleep logged for last night. Please log last night\'s sleep first, then add your nap.');
+          return;
+        }
+
+        // Add nap duration to previous night's total
+        const newDuration = previousSleep.duration_minutes + durationMinutes;
+        const napNote = `${previousSleep.notes ? previousSleep.notes + '\n' : ''}+ ${Math.floor(durationMinutes / 60)}h ${durationMinutes % 60}m nap`;
+
+        const { error: updateError } = await supabase
+          .from('sleep_logs')
+          .update({
+            duration_minutes: newDuration,
+            notes: napNote.trim(),
+          })
+          .eq('id', previousSleep.id);
+
+        if (updateError) {
+          console.error('Update error:', updateError);
+          setError('Failed to add nap. Please try again.');
+          return;
+        }
+
+        showToast(`Nap added to last night's sleep! New total: ${Math.floor(newDuration / 60)}h ${newDuration % 60}m`, 'success');
+        router.push('/dashboard');
+        router.refresh();
+        return;
+      }
+
+      // For regular night sleep: create/update entry as before
       const logData = {
         user_id: user.id,
         date,
         bedtime: bedDate.toISOString(),
         wake_time: wakeDate.toISOString(),
         duration_minutes: durationMinutes,
-        // For naps: use neutral defaults since these fields aren't shown
-        quality: isNap ? 3 : quality,
-        energy: isNap ? 3 : energy,
-        interruptions: isNap ? 0 : interruptions,
-        notes: isNap ? null : (notes.trim() || null),
-        is_nap: isNap,
+        quality,
+        energy,
+        interruptions,
+        notes: notes.trim() || null,
+        is_nap: false,
       };
 
       // Upsert (insert or update if exists)
-      // Constraint is now on (user_id, date, is_nap) to allow one sleep + one nap per date
       const { error: upsertError } = await supabase
         .from('sleep_logs')
         .upsert(logData, {
@@ -327,7 +380,7 @@ export default function SleepLogPage() {
       <main className="max-w-lg mx-auto px-4 py-6">
         {/* Date selector */}
         <div className="bg-card rounded-xl border border-border p-4 mb-6">
-          <p className="text-sm text-text-secondary text-center mb-2">Night of</p>
+          <p className="text-sm text-text-secondary text-center mb-2">{isNap ? 'Nap date' : 'Night of'}</p>
           <div className="flex items-center justify-center gap-4">
             <button
               type="button"
@@ -377,7 +430,7 @@ export default function SleepLogPage() {
                 {isNap ? 'This is a nap' : 'Is this a nap?'}
               </p>
               <p className="text-sm text-text-secondary">
-                {isNap ? 'Naps won\'t affect your bedtime insights' : 'Toggle if logging a daytime nap'}
+                {isNap ? 'Adds to last night\'s total sleep time' : 'Toggle if logging a daytime nap'}
               </p>
             </div>
           </div>
