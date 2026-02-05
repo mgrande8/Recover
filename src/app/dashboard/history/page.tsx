@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { Moon, History, User, Clock, Star, Zap, AlertCircle, FileText, Pencil, CloudSun, Plus } from 'lucide-react';
+import { Moon, History, User, Clock, Star, Zap, AlertCircle, FileText, Pencil, CloudSun, Plus, Trash2 } from 'lucide-react';
+import { DeleteSleepLog } from '@/components/DeleteSleepLog';
 import { Button } from '@/components/ui';
 import {
   calculateRecoveryScore,
@@ -54,9 +55,14 @@ function SleepLogCard({ log, profile }: { log: SleepLog; profile: Profile }) {
   const colorClass = getRecoveryColor(recovery.level);
 
   return (
-    <Link href={`/dashboard/log?date=${log.date}${log.is_nap ? '&nap=true' : ''}`} className="block">
-      <div className="bg-card rounded-xl border border-border p-4 hover:bg-card-hover hover:border-primary/30 transition-all group">
-        <div className="flex items-start justify-between mb-3">
+    <div className="bg-card rounded-xl border border-border p-4 hover:bg-card-hover transition-all group relative">
+      {/* Delete button - top right */}
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <DeleteSleepLog logId={log.id} date={formatDate(log.date)} isNap={log.is_nap} />
+      </div>
+
+      <Link href={`/dashboard/log?date=${log.date}${log.is_nap ? '&nap=true' : ''}`} className="block">
+        <div className="flex items-start justify-between mb-3 pr-8">
           <div>
             <div className="flex items-center gap-2">
               <p className="font-semibold text-text-primary">{formatDate(log.date)}</p>
@@ -127,8 +133,8 @@ function SleepLogCard({ log, profile }: { log: SleepLog; profile: Profile }) {
         <p className="text-xs text-text-muted text-center mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
           Tap to edit
         </p>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }
 
