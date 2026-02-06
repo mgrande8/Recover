@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
-// import { sendPushNotification } from '@/lib/push'; // Uncomment when push notifications are enabled
+import { sendPushNotification } from '@/lib/push';
 
 export type NotificationType = 'streak' | 'achievement' | 'reminder' | 'weekly_summary' | 'pro_upgrade' | 'system';
 
@@ -43,18 +43,18 @@ export async function createNotification(params: CreateNotificationParams): Prom
     throw error;
   }
 
-  // Push notifications disabled - uncomment when enabled
-  // if (sendPush) {
-  //   try {
-  //     await sendPushNotification(userId, {
-  //       title,
-  //       body: message,
-  //       data: { type, ...data },
-  //     });
-  //   } catch (pushError) {
-  //     console.error('Failed to send push notification:', pushError);
-  //   }
-  // }
+  // Send push notification if requested
+  if (params.sendPush) {
+    try {
+      await sendPushNotification(userId, {
+        title,
+        body: message,
+        data: { type, ...data },
+      });
+    } catch (pushError) {
+      console.error('Failed to send push notification:', pushError);
+    }
+  }
 }
 
 // Create a streak celebration notification
@@ -91,6 +91,7 @@ export async function createStreakNotification(userId: string, streak: number): 
     title: `${milestone.emoji} ${milestone.title}`,
     message: milestone.message,
     data: { streak },
+    sendPush: true,
   });
 }
 
@@ -105,6 +106,7 @@ export async function createProUpgradeNotification(
     title: '🎉 Welcome to Recover Pro!',
     message: `You now have access to all premium features including Sleep Banking, AI Insights, and Correlation Analysis.`,
     data: { plan },
+    sendPush: true,
   });
 }
 
