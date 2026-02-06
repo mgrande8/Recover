@@ -408,26 +408,40 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
     windows[key].avgScore = windows[key].total / windows[key].count;
   });
 
-  // Find best window, preferring times closer to typical bedtime when scores are similar
-  // Default to typical bedtime if no data
-  let bestWindow = { hour: typicalBedtimeHour, avgScore: 0 };
+  // Calculate overall average score to use as baseline
+  const allScores = bedtimeQuality.map((bq) => bq.score);
+  const avgOverallScore = allScores.reduce((a, b) => a + b, 0) / allScores.length;
+
+  // Find best window, strongly preferring times close to typical bedtime
+  // Only recommend a different time if it has significantly better scores
+  let bestWindow = { hour: typicalBedtimeHour, avgScore: avgOverallScore };
+
+  // First, look for windows within 2 hours of typical bedtime
+  const nearbyWindows: { hour: number; avgScore: number; count: number }[] = [];
   Object.entries(windows).forEach(([key, data]) => {
     const windowHour = parseFloat(key);
-    // Require at least 2 data points for a window to be considered
-    if (data.count >= 2) {
-      // Calculate distance from typical bedtime (prefer closer times)
-      const currentDistance = Math.abs(bestWindow.hour - typicalBedtimeHour);
-      const newDistance = Math.abs(windowHour - typicalBedtimeHour);
+    const distance = Math.abs(windowHour - typicalBedtimeHour);
 
-      // Select this window if:
-      // 1. Score is significantly better (more than 5 points)
-      // 2. OR score is similar but closer to typical bedtime
-      const scoreDiff = data.avgScore - bestWindow.avgScore;
-      if (scoreDiff > 5 || (scoreDiff > -3 && newDistance < currentDistance)) {
-        bestWindow = { hour: windowHour, avgScore: data.avgScore };
-      }
+    // Only consider windows within 2 hours of typical bedtime
+    if (distance <= 2 && data.count >= 1) {
+      nearbyWindows.push({ hour: windowHour, avgScore: data.avgScore, count: data.count });
     }
   });
+
+  // If we have nearby windows, find the best one
+  if (nearbyWindows.length > 0) {
+    // Sort by score (highest first), then by proximity to typical bedtime
+    nearbyWindows.sort((a, b) => {
+      const scoreDiff = b.avgScore - a.avgScore;
+      if (Math.abs(scoreDiff) > 3) return scoreDiff; // Prefer higher score if difference > 3
+      // If scores are similar, prefer closer to typical bedtime
+      return Math.abs(a.hour - typicalBedtimeHour) - Math.abs(b.hour - typicalBedtimeHour);
+    });
+    bestWindow = { hour: nearbyWindows[0].hour, avgScore: nearbyWindows[0].avgScore };
+  } else {
+    // No nearby data - just use typical bedtime
+    bestWindow = { hour: typicalBedtimeHour, avgScore: avgOverallScore };
+  }
 
   // Format time - handle the 24+ hour normalization
   let displayHour = bestWindow.hour;
@@ -463,7 +477,7 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
           </div>
           <p className="text-2xl font-bold text-warning mb-1">{formattedTime}</p>
           <p className="text-sm text-text-secondary">
-            Based on your data, going to bed around {formattedTime} gives you the best recovery (avg score: {Math.round(bestWindow.avgScore)}).
+            Based on your sleep patterns near your typical bedtime, {formattedTime} gives you optimal recovery (avg score: {Math.round(bestWindow.avgScore)}).
           </p>
           <div className="flex items-center gap-2 mt-2 text-xs text-text-muted">
             <Sun className="w-3.5 h-3.5" />
