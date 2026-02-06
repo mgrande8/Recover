@@ -50,8 +50,8 @@ export async function createStreakNotification(
       message: "You're building a great habit! Keep logging your sleep.",
     },
     7: {
-      title: '🔥 7-Day Streak!',
-      message: 'One full week of consistent tracking! Your sleep data is getting valuable.',
+      title: '⭐ 7-Day Streak!',
+      message: 'One full week! Loving Recover? A quick App Store rating helps others find us.',
     },
     14: {
       title: '⭐ 14-Day Streak!',
