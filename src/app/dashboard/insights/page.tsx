@@ -359,13 +359,13 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
         score: calculateRecoveryScore(log, profile).score,
       };
     })
-    // Filter out unreasonable bedtimes (before 6 PM or after 3 AM)
-    // Reasonable range: 18 (6 PM) to 27 (3 AM)
-    .filter((bq) => bq.hour >= 18 && bq.hour <= 27);
+    // Filter out unreasonable bedtimes (before 5 PM or after 5 AM)
+    // Reasonable range: 17 (5 PM) to 29 (5 AM)
+    .filter((bq) => bq.hour >= 17 && bq.hour <= 29);
 
-  if (bedtimeQuality.length < 5) {
+  if (bedtimeQuality.length < 3) {
     // Not enough reasonable bedtime data
-    const needed = 5 - bedtimeQuality.length;
+    const needed = 3 - bedtimeQuality.length;
     return (
       <div className="bg-card rounded-xl border border-border p-4">
         <div className="flex items-start gap-4">
@@ -382,7 +382,7 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
             <p className="text-sm text-text-primary font-medium mb-1">
               🎯 {needed} more regular {needed === 1 ? 'night' : 'nights'} needed
             </p>
-            <p className="text-xs text-text-muted">Log sleep with bedtimes between 6 PM - 3 AM for best results.</p>
+            <p className="text-xs text-text-muted">Log sleep with bedtimes between 5 PM - 5 AM for best results.</p>
           </div>
         </div>
       </div>
@@ -850,7 +850,7 @@ export default async function InsightsPage() {
   const isPro = profile.is_pro === true || profile.is_pro === 'true' || (profile.is_pro as unknown) === 1;
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-10 pt-safe">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
