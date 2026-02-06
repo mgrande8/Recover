@@ -29,6 +29,7 @@ export interface Profile {
   push_notifications_enabled: boolean;
   reminder_time: string; // TIME format "HH:MM"
   timezone: string; // IANA timezone e.g. "America/New_York"
+  has_rated_app: boolean; // Track if user has rated in App Store
   created_at: string;
   updated_at: string;
 }

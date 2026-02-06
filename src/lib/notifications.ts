@@ -39,11 +39,27 @@ export async function createNotification(
   }
 }
 
+// Check if user has already rated the app
+async function hasUserRatedApp(userId: string): Promise<boolean> {
+  const supabase = getSupabaseAdmin();
+  const { data } = await supabase
+    .from('profiles')
+    .select('has_rated_app')
+    .eq('id', userId)
+    .single();
+
+  return data?.has_rated_app === true;
+}
+
 // Streak celebration notification
 export async function createStreakNotification(
   userId: string,
   streak: number
 ): Promise<void> {
+  // Check if user has rated for review-related streaks (7 and 14)
+  const hasRated = (streak === 7 || streak === 14) ? await hasUserRatedApp(userId) : false;
+
+  // Messages with review prompts for 7 and 14 day (if not rated)
   const messages: Record<number, { title: string; message: string }> = {
     3: {
       title: '🔥 3-Day Streak!',
@@ -51,11 +67,15 @@ export async function createStreakNotification(
     },
     7: {
       title: '⭐ 7-Day Streak!',
-      message: 'One full week! Loving Recover? A quick App Store rating helps others find us.',
+      message: hasRated
+        ? 'One full week of consistent tracking! Your sleep data is getting valuable.'
+        : 'One full week! Loving Recover? A quick App Store rating helps others find us.',
     },
     14: {
       title: '⭐ 14-Day Streak!',
-      message: "Two weeks strong! You're committed to better sleep.",
+      message: hasRated
+        ? "Two weeks strong! You're committed to better sleep."
+        : "Two weeks strong! If you're enjoying Recover, please take a moment to rate us on the App Store.",
     },
     30: {
       title: '🏆 30-Day Streak!',

@@ -45,9 +45,11 @@ export function ReviewPrompt({ currentStreak }: ReviewPromptProps) {
     }
   }, [currentStreak]);
 
-  const handleRate = () => {
+  const handleRate = async () => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ rated: true, lastShown: Date.now() }));
+      // Mark in database so push notifications stop
+      await fetch('/api/user/rated', { method: 'POST' });
     } catch {}
     window.open(APP_STORE_REVIEW_URL, '_blank');
     setIsOpen(false);
