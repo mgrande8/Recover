@@ -217,7 +217,7 @@ export default function EditSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-10 pt-safe">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center">
