@@ -135,19 +135,48 @@ export async function createWeeklySummaryNotification(
   );
 }
 
+// Helper to get current hour in a timezone
+function getCurrentHourInTimezone(timezone: string): number {
+  try {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      hour12: false,
+    });
+    return parseInt(formatter.format(now), 10);
+  } catch {
+    // Default to UTC if timezone is invalid
+    return new Date().getUTCHours();
+  }
+}
+
+// Helper to get today's date in a timezone
+function getTodayInTimezone(timezone: string): string {
+  try {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    return formatter.format(now); // Returns YYYY-MM-DD
+  } catch {
+    return new Date().toISOString().split('T')[0];
+  }
+}
+
 // Get users who need daily reminders
 export async function getUsersForDailyReminder(): Promise<
   { id: string; reminder_time: string }[]
 > {
   const supabase = getSupabaseAdmin();
 
-  // Get users who have reminders enabled and haven't logged today
-  const today = new Date().toISOString().split('T')[0];
-
-  // Get users who have either email OR push notifications enabled
+  // Get users who have reminders enabled
   const { data: profiles, error } = await supabase
     .from('profiles')
-    .select('id, reminder_time')
+    .select('id, reminder_time, timezone')
     .or('email_reminders.eq.true,push_notifications_enabled.eq.true');
 
   if (error) {
@@ -155,34 +184,45 @@ export async function getUsersForDailyReminder(): Promise<
     return [];
   }
 
-  // Filter to users who haven't logged today
+  // Filter to users where it's currently their reminder time and they haven't logged today
   const usersToRemind: { id: string; reminder_time: string }[] = [];
 
   for (const profile of profiles || []) {
+    const timezone = profile.timezone || 'America/New_York'; // Default to Eastern
+    const reminderHour = parseInt((profile.reminder_time || '10:00').split(':')[0], 10);
+    const currentHour = getCurrentHourInTimezone(timezone);
+
+    // Only send if current hour matches reminder hour
+    if (currentHour !== reminderHour) {
+      continue;
+    }
+
+    // Check if user hasn't logged today (in their timezone)
+    const todayInUserTz = getTodayInTimezone(timezone);
     const { data: todayLog } = await supabase
       .from('sleep_logs')
       .select('id')
       .eq('user_id', profile.id)
-      .eq('date', today)
+      .eq('date', todayInUserTz)
       .eq('is_nap', false)
       .single();
 
     if (!todayLog) {
-      usersToRemind.push(profile);
+      usersToRemind.push({ id: profile.id, reminder_time: profile.reminder_time });
     }
   }
 
   return usersToRemind;
 }
 
-// Get users for weekly summary (run on Sundays)
+// Get users for weekly summary (run on Sundays at their reminder time)
 export async function getUsersForWeeklySummary(): Promise<string[]> {
   const supabase = getSupabaseAdmin();
 
   // Get users who have either email weekly summary OR push notifications enabled
   const { data: profiles, error } = await supabase
     .from('profiles')
-    .select('id')
+    .select('id, reminder_time, timezone')
     .or('email_weekly_summary.eq.true,push_notifications_enabled.eq.true');
 
   if (error) {
@@ -190,7 +230,21 @@ export async function getUsersForWeeklySummary(): Promise<string[]> {
     return [];
   }
 
-  return (profiles || []).map((p) => p.id);
+  // Filter to users where it's currently their reminder hour
+  const usersToNotify: string[] = [];
+
+  for (const profile of profiles || []) {
+    const timezone = profile.timezone || 'America/New_York';
+    const reminderHour = parseInt((profile.reminder_time || '10:00').split(':')[0], 10);
+    const currentHour = getCurrentHourInTimezone(timezone);
+
+    // Only send if current hour matches reminder hour
+    if (currentHour === reminderHour) {
+      usersToNotify.push(profile.id);
+    }
+  }
+
+  return usersToNotify;
 }
 
 // Calculate weekly stats for a user

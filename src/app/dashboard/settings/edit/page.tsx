@@ -64,6 +64,7 @@ export default function EditSettingsPage() {
   const [emailStreakCelebrations, setEmailStreakCelebrations] = useState(true);
   const [emailReminders, setEmailReminders] = useState(true);
   const [reminderTime, setReminderTime] = useState('10:00');
+  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
 
   // Password change state
   const [showPasswordSection, setShowPasswordSection] = useState(false);
@@ -103,6 +104,7 @@ export default function EditSettingsPage() {
           setEmailStreakCelebrations(profile.email_streak_celebrations ?? true);
           setEmailReminders(profile.email_reminders ?? true);
           setReminderTime(profile.reminder_time || '10:00');
+          setTimezone(profile.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
         }
       }
       setIsLoading(false);
@@ -139,6 +141,7 @@ export default function EditSettingsPage() {
           email_streak_celebrations: emailStreakCelebrations,
           email_reminders: emailReminders,
           reminder_time: reminderTime,
+          timezone: timezone,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -481,6 +484,45 @@ export default function EditSettingsPage() {
                 />
               </div>
             )}
+
+            {/* Timezone */}
+            <div className="flex items-start justify-between pt-4 border-t border-border">
+              <div className="flex items-center gap-3">
+                <Clock className="w-4 h-4 text-text-muted" />
+                <div>
+                  <p className="text-sm text-text-primary">Your Timezone</p>
+                  <p className="text-xs text-text-muted">Notifications sent in your local time</p>
+                </div>
+              </div>
+            </div>
+            <select
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
+              className="w-full bg-background border border-border rounded-lg py-2.5 px-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <optgroup label="North America">
+                <option value="America/New_York">Eastern Time (ET)</option>
+                <option value="America/Chicago">Central Time (CT)</option>
+                <option value="America/Denver">Mountain Time (MT)</option>
+                <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                <option value="America/Anchorage">Alaska Time</option>
+                <option value="Pacific/Honolulu">Hawaii Time</option>
+              </optgroup>
+              <optgroup label="Europe">
+                <option value="Europe/London">London (GMT/BST)</option>
+                <option value="Europe/Paris">Paris (CET)</option>
+                <option value="Europe/Berlin">Berlin (CET)</option>
+                <option value="Europe/Madrid">Madrid (CET)</option>
+                <option value="Europe/Rome">Rome (CET)</option>
+              </optgroup>
+              <optgroup label="Asia/Pacific">
+                <option value="Asia/Tokyo">Tokyo (JST)</option>
+                <option value="Asia/Shanghai">Shanghai (CST)</option>
+                <option value="Asia/Singapore">Singapore (SGT)</option>
+                <option value="Asia/Dubai">Dubai (GST)</option>
+                <option value="Australia/Sydney">Sydney (AEST)</option>
+              </optgroup>
+            </select>
           </div>
         </div>
 
