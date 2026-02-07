@@ -151,13 +151,14 @@ async function sendToDevice(
 
 // Send iOS push notification via APNs
 async function sendAPNs(token: string, payload: PushNotificationPayload): Promise<boolean> {
-  const teamId = process.env.APNS_TEAM_ID;
-  const keyId = process.env.APNS_KEY_ID;
-  const privateKey = process.env.APNS_PRIVATE_KEY;
-  const bundleId = process.env.APNS_BUNDLE_ID || 'com.mgrande8.recover';
+  // Support both APNS_ and APPLE_ prefixed env vars
+  const teamId = process.env.APNS_TEAM_ID || process.env.APPLE_TEAM_ID;
+  const keyId = process.env.APNS_KEY_ID || process.env.APPLE_KEY_ID;
+  const privateKey = process.env.APNS_PRIVATE_KEY || process.env.APPLE_PRIVATE_KEY;
+  const bundleId = process.env.APNS_BUNDLE_ID || process.env.APPLE_BUNDLE_ID || 'com.mgrande8.recover';
 
   if (!teamId || !keyId || !privateKey) {
-    console.error('APNs credentials not configured. Set APNS_TEAM_ID, APNS_KEY_ID, APNS_PRIVATE_KEY');
+    console.error('APNs credentials not configured. Set APNS_TEAM_ID, APNS_KEY_ID, APNS_PRIVATE_KEY (or APPLE_ prefix)');
     // Return true to not remove the token - config issue, not token issue
     return true;
   }
