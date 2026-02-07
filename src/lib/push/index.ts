@@ -149,6 +149,13 @@ async function sendToDevice(
   return false;
 }
 
+// Debug info for troubleshooting - stored in module scope
+let lastApnsDebug: Record<string, unknown> = {};
+
+export function getLastApnsDebug() {
+  return lastApnsDebug;
+}
+
 // Send iOS push notification via APNs
 async function sendAPNs(token: string, payload: PushNotificationPayload): Promise<boolean> {
   // Support both APNS_ and APPLE_ prefixed env vars
@@ -157,7 +164,17 @@ async function sendAPNs(token: string, payload: PushNotificationPayload): Promis
   const privateKey = process.env.APNS_PRIVATE_KEY || process.env.APPLE_PRIVATE_KEY;
   const bundleId = process.env.APNS_BUNDLE_ID || process.env.APPLE_BUNDLE_ID || 'com.mgrande8.recover';
 
+  lastApnsDebug = {
+    hasTeamId: !!teamId,
+    hasKeyId: !!keyId,
+    hasPrivateKey: !!privateKey,
+    privateKeyLength: privateKey?.length || 0,
+    bundleId,
+    tokenPreview: token.substring(0, 20) + '...',
+  };
+
   if (!teamId || !keyId || !privateKey) {
+    lastApnsDebug.error = 'Missing credentials';
     console.error('APNs credentials not configured. Set APNS_TEAM_ID, APNS_KEY_ID, APNS_PRIVATE_KEY (or APPLE_ prefix)');
     // Return true to not remove the token - config issue, not token issue
     return true;
@@ -198,19 +215,26 @@ async function sendAPNs(token: string, payload: PushNotificationPayload): Promis
       }),
     });
 
+    lastApnsDebug.apnsStatus = response.status;
+
     if (response.status === 200) {
+      lastApnsDebug.success = true;
       console.log('APNs notification sent successfully');
       return true;
     } else if (response.status === 410 || response.status === 400) {
       // 410 = Unregistered, 400 = Bad device token
-      console.log('Invalid APNs token, will be removed');
+      const errorBody = await response.text();
+      lastApnsDebug.error = errorBody;
+      console.log('Invalid APNs token, will be removed:', errorBody);
       return false;
     } else {
       const errorBody = await response.text();
+      lastApnsDebug.error = errorBody;
       console.error('APNs error:', response.status, errorBody);
       return true; // Don't remove token on server errors
     }
-  } catch (err) {
+  } catch (err: any) {
+    lastApnsDebug.error = err.message || String(err);
     console.error('APNs request failed:', err);
     return true; // Don't remove token on network errors
   }

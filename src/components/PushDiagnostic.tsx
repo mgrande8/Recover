@@ -166,6 +166,10 @@ export function PushDiagnostic({ visible = true }: { visible?: boolean }) {
         if (data.sent === 0 && data.failed === 0) {
           log('No device tokens found in database.', 'error');
         }
+        // Show debug info
+        if (data.debug) {
+          log(`APNs Debug: ${JSON.stringify(data.debug)}`, data.debug.error ? 'error' : 'info');
+        }
       } else {
         log(`Test failed: ${data.error}`, 'error');
       }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { sendPushNotification } from '@/lib/push';
+import { sendPushNotification, getLastApnsDebug } from '@/lib/push';
 
 // Test endpoint to send a push notification to the current user
 export async function POST(request: Request) {
@@ -26,9 +26,13 @@ export async function POST(request: Request) {
       data: { type: 'test' },
     });
 
+    // Get debug info from the last APNs call
+    const debug = getLastApnsDebug();
+
     return NextResponse.json({
       message: 'Test notification sent',
       ...result,
+      debug,
     });
   } catch (error) {
     console.error('Test push error:', error);
