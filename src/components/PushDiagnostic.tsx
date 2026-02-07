@@ -154,10 +154,11 @@ export function PushDiagnostic({ visible = true }: { visible?: boolean }) {
 
   const sendTestNotification = async () => {
     setTestSending(true);
-    log('Sending test notification...');
+    log('Sending test notification in 5 seconds... CLOSE THE APP NOW!', 'info');
 
     try {
-      const response = await fetch('/api/push/test', { method: 'POST' });
+      // 5 second delay so user can close the app
+      const response = await fetch('/api/push/test?delay=5', { method: 'POST' });
       const data = await response.json();
 
       if (response.ok) {

@@ -3,13 +3,21 @@ import { createClient } from '@/lib/supabase/server';
 import { sendPushNotification } from '@/lib/push';
 
 // Test endpoint to send a push notification to the current user
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Check for delay parameter (gives user time to close app)
+    const url = new URL(request.url);
+    const delay = parseInt(url.searchParams.get('delay') || '0', 10);
+
+    if (delay > 0 && delay <= 30) {
+      await new Promise(resolve => setTimeout(resolve, delay * 1000));
     }
 
     const result = await sendPushNotification(user.id, {
