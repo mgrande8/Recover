@@ -166,11 +166,14 @@ async function sendAPNs(token: string, payload: PushNotificationPayload): Promis
     // Generate JWT for APNs authentication
     const jwt = await generateAPNsJWT(teamId, keyId, privateKey);
 
-    // APNs endpoint (use api.push.apple.com for production)
-    const isProduction = process.env.NODE_ENV === 'production';
-    const apnsHost = isProduction
+    // APNs endpoint - use APNS_ENVIRONMENT to control, or default based on NODE_ENV
+    // TestFlight and development builds use sandbox, App Store uses production
+    const apnsEnv = process.env.APNS_ENVIRONMENT || (process.env.NODE_ENV === 'production' ? 'production' : 'sandbox');
+    const apnsHost = apnsEnv === 'production'
       ? 'https://api.push.apple.com'
       : 'https://api.sandbox.push.apple.com';
+
+    console.log(`Sending APNs to ${apnsEnv} environment: ${apnsHost}`);
 
     const response = await fetch(`${apnsHost}/3/device/${token}`, {
       method: 'POST',
