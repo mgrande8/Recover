@@ -224,55 +224,22 @@ export function PushDiagnostic({ visible = true }: { visible?: boolean }) {
 
 export function HiddenPushDiagnostic() {
   const [showDiagnostic, setShowDiagnostic] = useState(false);
-  const [showDebugButton, setShowDebugButton] = useState(false);
-  const [tapCount, setTapCount] = useState(0);
-
-  const handleVersionTap = () => {
-    const newCount = tapCount + 1;
-    setTapCount(newCount);
-
-    // Show debug button after 3 taps
-    if (newCount >= 3) {
-      setShowDebugButton(true);
-    }
-
-    // Reset after 3 seconds
-    setTimeout(() => {
-      setTapCount(0);
-    }, 3000);
-  };
 
   return (
     <div className="space-y-4">
+      {/* Always visible test button */}
+      <button
+        onClick={() => setShowDiagnostic(!showDiagnostic)}
+        className="w-full bg-primary text-white text-sm font-medium py-3 px-4 rounded-lg"
+      >
+        {showDiagnostic ? 'Hide Notification Test' : 'Test Push Notifications'}
+      </button>
+
       {showDiagnostic && <PushDiagnostic visible={true} />}
 
-      {showDebugButton && !showDiagnostic && (
-        <button
-          onClick={() => setShowDiagnostic(true)}
-          className="w-full bg-primary/10 text-primary text-sm font-medium py-2 px-4 rounded-lg"
-        >
-          Open Push Notification Diagnostic
-        </button>
-      )}
-
-      {showDiagnostic && (
-        <button
-          onClick={() => setShowDiagnostic(false)}
-          className="w-full bg-card border border-border text-text-secondary text-sm py-2 px-4 rounded-lg"
-        >
-          Hide Diagnostic
-        </button>
-      )}
-
-      <div
-        className="text-center text-text-muted text-sm select-none"
-        onClick={handleVersionTap}
-      >
+      <div className="text-center text-text-muted text-sm">
         <p>Recover v1.0.2</p>
         <p className="text-xs">Sleep better. Perform better.</p>
-        {tapCount > 0 && tapCount < 3 && (
-          <p className="text-xs text-primary mt-1">Tap {3 - tapCount} more times for debug</p>
-        )}
       </div>
     </div>
   );
