@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import { ApnsClient, Notification, Errors } from 'apns2';
 
 export interface DeviceToken {
   id: string;
@@ -156,143 +157,106 @@ export function getLastApnsDebug() {
   return lastApnsDebug;
 }
 
-// Send iOS push notification via APNs
-async function sendAPNs(token: string, payload: PushNotificationPayload): Promise<boolean> {
-  // Support both APNS_ and APPLE_ prefixed env vars
+// Cached APNs client (reuse connection)
+let apnsClient: ApnsClient | null = null;
+
+function getApnsClient(): ApnsClient | null {
+  if (apnsClient) return apnsClient;
+
   const teamId = process.env.APNS_TEAM_ID || process.env.APPLE_TEAM_ID;
   const keyId = process.env.APNS_KEY_ID || process.env.APPLE_KEY_ID;
   const privateKey = process.env.APNS_PRIVATE_KEY || process.env.APPLE_PRIVATE_KEY;
   const bundleId = process.env.APNS_BUNDLE_ID || process.env.APPLE_BUNDLE_ID || 'com.mgrande8.recover';
+
+  if (!teamId || !keyId || !privateKey) {
+    return null;
+  }
+
+  // Format the private key properly
+  const pemKey = privateKey.includes('-----BEGIN')
+    ? privateKey
+    : `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----`;
+
+  // APNs environment
+  const apnsEnv = process.env.APNS_ENVIRONMENT || (process.env.NODE_ENV === 'production' ? 'production' : 'sandbox');
+  const host = apnsEnv === 'production' ? 'api.push.apple.com' : 'api.sandbox.push.apple.com';
+
+  apnsClient = new ApnsClient({
+    team: teamId,
+    keyId: keyId,
+    signingKey: pemKey,
+    defaultTopic: bundleId,
+    host: host,
+  });
+
+  return apnsClient;
+}
+
+// Send iOS push notification via APNs (using HTTP/2)
+async function sendAPNs(token: string, payload: PushNotificationPayload): Promise<boolean> {
+  const teamId = process.env.APNS_TEAM_ID || process.env.APPLE_TEAM_ID;
+  const keyId = process.env.APNS_KEY_ID || process.env.APPLE_KEY_ID;
+  const privateKey = process.env.APNS_PRIVATE_KEY || process.env.APPLE_PRIVATE_KEY;
+  const bundleId = process.env.APNS_BUNDLE_ID || process.env.APPLE_BUNDLE_ID || 'com.mgrande8.recover';
+  const apnsEnv = process.env.APNS_ENVIRONMENT || (process.env.NODE_ENV === 'production' ? 'production' : 'sandbox');
 
   lastApnsDebug = {
     hasTeamId: !!teamId,
     hasKeyId: !!keyId,
     hasPrivateKey: !!privateKey,
     privateKeyLength: privateKey?.length || 0,
-    privateKeyStart: privateKey?.substring(0, 30) || '',
     bundleId,
+    apnsEnv,
     tokenPreview: token.substring(0, 20) + '...',
   };
 
   if (!teamId || !keyId || !privateKey) {
     lastApnsDebug.error = 'Missing credentials';
-    console.error('APNs credentials not configured. Set APNS_TEAM_ID, APNS_KEY_ID, APNS_PRIVATE_KEY (or APPLE_ prefix)');
-    // Return true to not remove the token - config issue, not token issue
-    return true;
+    console.error('APNs credentials not configured');
+    return true; // Don't remove token - config issue
   }
 
   try {
-    // Generate JWT for APNs authentication
-    let jwt: string;
-    try {
-      jwt = await generateAPNsJWT(teamId, keyId, privateKey);
-      lastApnsDebug.jwtGenerated = true;
-    } catch (jwtError: any) {
-      lastApnsDebug.jwtError = jwtError.message || String(jwtError);
-      console.error('JWT generation failed:', jwtError);
+    const client = getApnsClient();
+    if (!client) {
+      lastApnsDebug.error = 'Failed to create APNs client';
       return true;
     }
 
-    // APNs endpoint - use APNS_ENVIRONMENT to control, or default based on NODE_ENV
-    // TestFlight and development builds use sandbox, App Store uses production
-    const apnsEnv = process.env.APNS_ENVIRONMENT || (process.env.NODE_ENV === 'production' ? 'production' : 'sandbox');
-    const apnsHost = apnsEnv === 'production'
-      ? 'https://api.push.apple.com'
-      : 'https://api.sandbox.push.apple.com';
+    lastApnsDebug.clientCreated = true;
 
-    lastApnsDebug.apnsEnv = apnsEnv;
-    lastApnsDebug.apnsHost = apnsHost;
-    console.log(`Sending APNs to ${apnsEnv} environment: ${apnsHost}`);
-
-    const response = await fetch(`${apnsHost}/3/device/${token}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `bearer ${jwt}`,
-        'apns-topic': bundleId,
-        'apns-push-type': 'alert',
-        'apns-priority': '10',
-        'Content-Type': 'application/json',
+    const notification = new Notification(token, {
+      alert: {
+        title: payload.title,
+        body: payload.body,
       },
-      body: JSON.stringify({
-        aps: {
-          alert: {
-            title: payload.title,
-            body: payload.body,
-          },
-          sound: 'default',
-          badge: 1,
-        },
-        ...payload.data,
-      }),
+      sound: 'default',
+      badge: 1,
+      payload: payload.data,
     });
 
-    lastApnsDebug.apnsStatus = response.status;
+    await client.send(notification);
 
-    if (response.status === 200) {
-      lastApnsDebug.success = true;
-      console.log('APNs notification sent successfully');
-      return true;
-    } else if (response.status === 410 || response.status === 400) {
-      // 410 = Unregistered, 400 = Bad device token
-      const errorBody = await response.text();
-      lastApnsDebug.error = errorBody;
-      console.log('Invalid APNs token, will be removed:', errorBody);
-      return false;
-    } else {
-      const errorBody = await response.text();
-      lastApnsDebug.error = errorBody;
-      console.error('APNs error:', response.status, errorBody);
-      return true; // Don't remove token on server errors
-    }
+    lastApnsDebug.success = true;
+    console.log('APNs notification sent successfully via HTTP/2');
+    return true;
+
   } catch (err: any) {
     lastApnsDebug.error = err.message || String(err);
-    lastApnsDebug.errorName = err.name;
-    lastApnsDebug.errorCause = err.cause?.message || err.cause?.code || String(err.cause || '');
-    console.error('APNs request failed:', err);
-    return true; // Don't remove token on network errors
+    lastApnsDebug.errorReason = err.reason;
+    console.error('APNs error:', err);
+
+    // Check for invalid token errors
+    if (err.reason === Errors.badDeviceToken ||
+        err.reason === Errors.unregistered ||
+        err.reason === 'BadDeviceToken' ||
+        err.reason === 'Unregistered') {
+      lastApnsDebug.invalidToken = true;
+      return false; // Remove invalid token
+    }
+
+    return true; // Keep token on other errors
   }
-}
-
-// Generate JWT for APNs authentication
-async function generateAPNsJWT(teamId: string, keyId: string, privateKey: string): Promise<string> {
-  // JWT header
-  const header = {
-    alg: 'ES256',
-    kid: keyId,
-  };
-
-  // JWT payload
-  const now = Math.floor(Date.now() / 1000);
-  const claims = {
-    iss: teamId,
-    iat: now,
-  };
-
-  // Base64url encode
-  const base64url = (obj: object) => {
-    const str = JSON.stringify(obj);
-    const base64 = Buffer.from(str).toString('base64');
-    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-  };
-
-  const headerEncoded = base64url(header);
-  const claimsEncoded = base64url(claims);
-  const message = `${headerEncoded}.${claimsEncoded}`;
-
-  // Sign with ES256 (requires crypto)
-  const crypto = await import('crypto');
-  const sign = crypto.createSign('SHA256');
-  sign.update(message);
-  sign.end();
-
-  // The private key should be in PEM format
-  const pemKey = privateKey.includes('-----BEGIN')
-    ? privateKey
-    : `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----`;
-
-  const signature = sign.sign(pemKey, 'base64url');
-
-  return `${message}.${signature}`;
 }
 
 // Send Android push notification via FCM
