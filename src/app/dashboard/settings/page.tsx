@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import {
   Moon,
-  History,
   User,
   Clock,
   Target,
@@ -17,7 +16,6 @@ import {
 import { Button } from '@/components/ui';
 import { ManageSubscriptionButton } from '@/components/ManageSubscriptionButton';
 import { ProUpgradeSuccessModal } from '@/components/ProUpgradeSuccessModal';
-import { HiddenPushDiagnostic } from '@/components/PushDiagnostic';
 
 // Settings item component
 function SettingsItem({
@@ -202,12 +200,6 @@ export default async function SettingsPage() {
             Delete Account
           </Button>
         </Link>
-
-        {/* Push Notification Testing */}
-        <div className="mt-6 p-4 bg-danger rounded-xl">
-          <p className="text-white font-bold text-center mb-3">NOTIFICATION TEST PANEL</p>
-          <HiddenPushDiagnostic />
-        </div>
       </main>
 
     </div>
