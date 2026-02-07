@@ -203,8 +203,9 @@ export default async function SettingsPage() {
           </Button>
         </Link>
 
-        {/* App version - tap 5 times for push diagnostic */}
-        <div className="mt-8">
+        {/* Push Notification Testing */}
+        <div className="mt-6 p-4 bg-danger rounded-xl">
+          <p className="text-white font-bold text-center mb-3">NOTIFICATION TEST PANEL</p>
           <HiddenPushDiagnostic />
         </div>
       </main>
