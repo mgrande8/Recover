@@ -246,6 +246,8 @@ async function sendAPNs(token: string, payload: PushNotificationPayload): Promis
     }
   } catch (err: any) {
     lastApnsDebug.error = err.message || String(err);
+    lastApnsDebug.errorName = err.name;
+    lastApnsDebug.errorCause = err.cause?.message || err.cause?.code || String(err.cause || '');
     console.error('APNs request failed:', err);
     return true; // Don't remove token on network errors
   }
