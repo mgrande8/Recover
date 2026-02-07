@@ -232,7 +232,7 @@ async function sendAPNs(token: string, payload: PushNotificationPayload): Promis
       },
       sound: 'default',
       badge: 1,
-      payload: payload.data,
+      data: payload.data,
     });
 
     await client.send(notification);
