@@ -169,6 +169,7 @@ async function sendAPNs(token: string, payload: PushNotificationPayload): Promis
     hasKeyId: !!keyId,
     hasPrivateKey: !!privateKey,
     privateKeyLength: privateKey?.length || 0,
+    privateKeyStart: privateKey?.substring(0, 30) || '',
     bundleId,
     tokenPreview: token.substring(0, 20) + '...',
   };
@@ -182,7 +183,15 @@ async function sendAPNs(token: string, payload: PushNotificationPayload): Promis
 
   try {
     // Generate JWT for APNs authentication
-    const jwt = await generateAPNsJWT(teamId, keyId, privateKey);
+    let jwt: string;
+    try {
+      jwt = await generateAPNsJWT(teamId, keyId, privateKey);
+      lastApnsDebug.jwtGenerated = true;
+    } catch (jwtError: any) {
+      lastApnsDebug.jwtError = jwtError.message || String(jwtError);
+      console.error('JWT generation failed:', jwtError);
+      return true;
+    }
 
     // APNs endpoint - use APNS_ENVIRONMENT to control, or default based on NODE_ENV
     // TestFlight and development builds use sandbox, App Store uses production
@@ -191,6 +200,8 @@ async function sendAPNs(token: string, payload: PushNotificationPayload): Promis
       ? 'https://api.push.apple.com'
       : 'https://api.sandbox.push.apple.com';
 
+    lastApnsDebug.apnsEnv = apnsEnv;
+    lastApnsDebug.apnsHost = apnsHost;
     console.log(`Sending APNs to ${apnsEnv} environment: ${apnsHost}`);
 
     const response = await fetch(`${apnsHost}/3/device/${token}`, {
