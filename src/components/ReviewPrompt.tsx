@@ -1,10 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Star, X, Heart } from 'lucide-react';
 import { Button } from '@/components/ui';
 
 const APP_STORE_REVIEW_URL = 'https://apps.apple.com/app/id6758255662?action=write-review';
+
+// Helper to open URL using Capacitor Browser or fallback
+async function openAppStoreReview(): Promise<void> {
+  try {
+    const cap = (window as any).Capacitor;
+    if (cap?.isNativePlatform?.()) {
+      const { Browser } = await import('@capacitor/browser');
+      await Browser.open({ url: APP_STORE_REVIEW_URL });
+      return;
+    }
+  } catch (error) {
+    console.error('Failed to open with Capacitor Browser:', error);
+  }
+  // Fallback for web
+  window.open(APP_STORE_REVIEW_URL, '_blank');
+}
 const STORAGE_KEY = 'recover_review';
 const MIN_STREAK = 7;
 const COOLDOWN_DAYS = 90;
@@ -45,15 +61,15 @@ export function ReviewPrompt({ currentStreak }: ReviewPromptProps) {
     }
   }, [currentStreak]);
 
-  const handleRate = async () => {
+  const handleRate = useCallback(async () => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ rated: true, lastShown: Date.now() }));
       // Mark in database so push notifications stop
       await fetch('/api/user/rated', { method: 'POST' });
     } catch {}
-    window.open(APP_STORE_REVIEW_URL, '_blank');
+    await openAppStoreReview();
     setIsOpen(false);
-  };
+  }, []);
 
   const handleNotNow = () => {
     try {

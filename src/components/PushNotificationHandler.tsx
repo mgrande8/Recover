@@ -96,6 +96,14 @@ export function PushNotificationHandler() {
           }
         });
 
+        // Clear badge and delivered notifications when app opens
+        try {
+          await PushNotifications.removeAllDeliveredNotifications();
+          console.log('[Push] Cleared delivered notifications and badge');
+        } catch (badgeError) {
+          console.log('[Push] Could not clear badge:', badgeError);
+        }
+
         // Now register with APNs
         console.log('[Push] Registering with APNs...');
         await PushNotifications.register();

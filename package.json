@@ -20,6 +20,7 @@
     "ios:setup": "npm run generate:ios-icons && npm run generate:ios-splash && npx cap sync ios"
   },
   "dependencies": {
+    "@capacitor/browser": "^8.0.0",
     "@capacitor/cli": "^8.0.1",
     "@capacitor/core": "^8.0.1",
     "@capacitor/haptics": "^8.0.0",
