@@ -472,8 +472,8 @@ export default function EditSettingsPage() {
               </button>
             </div>
 
-            {/* Reminder Time (only show if reminders enabled) */}
-            {emailReminders && (
+            {/* Reminder Time (show if push or email reminders enabled) */}
+            {(emailReminders || pushNotificationsEnabled) && (
               <div className="pl-7 pt-2 border-t border-border">
                 <label className="text-sm text-text-secondary block mb-2">Reminder time</label>
                 <input
@@ -505,22 +505,68 @@ export default function EditSettingsPage() {
                 <option value="America/Chicago">Central Time (CT)</option>
                 <option value="America/Denver">Mountain Time (MT)</option>
                 <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                <option value="America/Phoenix">Arizona (MST)</option>
                 <option value="America/Anchorage">Alaska Time</option>
                 <option value="Pacific/Honolulu">Hawaii Time</option>
+                <option value="America/Toronto">Toronto (ET)</option>
+                <option value="America/Vancouver">Vancouver (PT)</option>
+              </optgroup>
+              <optgroup label="Central & South America">
+                <option value="America/Mexico_City">Mexico City (CST)</option>
+                <option value="America/Bogota">Bogota (COT)</option>
+                <option value="America/Lima">Lima (PET)</option>
+                <option value="America/Santiago">Santiago (CLT)</option>
+                <option value="America/Sao_Paulo">São Paulo (BRT)</option>
+                <option value="America/Buenos_Aires">Buenos Aires (ART)</option>
               </optgroup>
               <optgroup label="Europe">
                 <option value="Europe/London">London (GMT/BST)</option>
+                <option value="Europe/Dublin">Dublin (GMT/IST)</option>
                 <option value="Europe/Paris">Paris (CET)</option>
                 <option value="Europe/Berlin">Berlin (CET)</option>
                 <option value="Europe/Madrid">Madrid (CET)</option>
                 <option value="Europe/Rome">Rome (CET)</option>
+                <option value="Europe/Amsterdam">Amsterdam (CET)</option>
+                <option value="Europe/Brussels">Brussels (CET)</option>
+                <option value="Europe/Zurich">Zurich (CET)</option>
+                <option value="Europe/Vienna">Vienna (CET)</option>
+                <option value="Europe/Stockholm">Stockholm (CET)</option>
+                <option value="Europe/Warsaw">Warsaw (CET)</option>
+                <option value="Europe/Athens">Athens (EET)</option>
+                <option value="Europe/Helsinki">Helsinki (EET)</option>
+                <option value="Europe/Moscow">Moscow (MSK)</option>
               </optgroup>
-              <optgroup label="Asia/Pacific">
-                <option value="Asia/Tokyo">Tokyo (JST)</option>
-                <option value="Asia/Shanghai">Shanghai (CST)</option>
-                <option value="Asia/Singapore">Singapore (SGT)</option>
+              <optgroup label="Middle East & Africa">
                 <option value="Asia/Dubai">Dubai (GST)</option>
+                <option value="Asia/Riyadh">Riyadh (AST)</option>
+                <option value="Asia/Jerusalem">Jerusalem (IST)</option>
+                <option value="Asia/Tehran">Tehran (IRST)</option>
+                <option value="Africa/Cairo">Cairo (EET)</option>
+                <option value="Africa/Lagos">Lagos (WAT)</option>
+                <option value="Africa/Johannesburg">Johannesburg (SAST)</option>
+                <option value="Africa/Nairobi">Nairobi (EAT)</option>
+              </optgroup>
+              <optgroup label="Asia">
+                <option value="Asia/Kolkata">India (IST)</option>
+                <option value="Asia/Dhaka">Dhaka (BST)</option>
+                <option value="Asia/Bangkok">Bangkok (ICT)</option>
+                <option value="Asia/Jakarta">Jakarta (WIB)</option>
+                <option value="Asia/Singapore">Singapore (SGT)</option>
+                <option value="Asia/Hong_Kong">Hong Kong (HKT)</option>
+                <option value="Asia/Shanghai">Shanghai (CST)</option>
+                <option value="Asia/Taipei">Taipei (CST)</option>
+                <option value="Asia/Seoul">Seoul (KST)</option>
+                <option value="Asia/Tokyo">Tokyo (JST)</option>
+                <option value="Asia/Manila">Manila (PHT)</option>
+              </optgroup>
+              <optgroup label="Australia & Pacific">
+                <option value="Australia/Perth">Perth (AWST)</option>
+                <option value="Australia/Adelaide">Adelaide (ACST)</option>
+                <option value="Australia/Brisbane">Brisbane (AEST)</option>
                 <option value="Australia/Sydney">Sydney (AEST)</option>
+                <option value="Australia/Melbourne">Melbourne (AEST)</option>
+                <option value="Pacific/Auckland">Auckland (NZST)</option>
+                <option value="Pacific/Fiji">Fiji (FJT)</option>
               </optgroup>
             </select>
           </div>

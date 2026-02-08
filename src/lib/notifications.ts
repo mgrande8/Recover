@@ -107,8 +107,26 @@ export async function createStreakNotification(
   await createNotification(userId, 'streak', content.title, content.message, { streak });
 }
 
-// Daily reminder notification
+// Daily reminder notification (with duplicate prevention)
 export async function createReminderNotification(userId: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+
+  // Check if we already sent a reminder today to prevent duplicates
+  const today = new Date().toISOString().split('T')[0];
+  const { data: existingReminder } = await supabase
+    .from('notifications')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('type', 'reminder')
+    .gte('created_at', `${today}T00:00:00Z`)
+    .limit(1)
+    .single();
+
+  if (existingReminder) {
+    console.log(`Skipping duplicate reminder for user ${userId} - already sent today`);
+    return;
+  }
+
   await createNotification(
     userId,
     'reminder',

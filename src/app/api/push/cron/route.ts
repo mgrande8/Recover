@@ -10,11 +10,23 @@ import {
 
 // Verify the request is from a trusted source (Vercel Cron or similar)
 function verifyRequest(headersList: Headers): boolean {
+  // Vercel Cron jobs include this header automatically
+  const vercelCronHeader = headersList.get('x-vercel-cron');
+  if (vercelCronHeader) {
+    return true;
+  }
+
   const cronSecret = process.env.CRON_SECRET;
 
-  // If no secret is set, allow requests (for development)
+  // In production, require CRON_SECRET
+  if (process.env.NODE_ENV === 'production' && !cronSecret) {
+    console.error('CRON_SECRET not set in production - rejecting request');
+    return false;
+  }
+
+  // In development without secret, allow requests
   if (!cronSecret) {
-    console.warn('CRON_SECRET not set - allowing all requests');
+    console.warn('CRON_SECRET not set - allowing requests (dev only)');
     return true;
   }
 
