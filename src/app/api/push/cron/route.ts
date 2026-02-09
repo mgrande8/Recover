@@ -60,22 +60,27 @@ export async function GET(request: Request) {
 }
 
 async function handleDailyReminders(): Promise<NextResponse> {
+  console.log(`[Cron] Daily reminder job started at ${new Date().toISOString()}`);
+
   const users = await getUsersForDailyReminder();
+  console.log(`[Cron] Found ${users.length} users to remind`);
 
   let sent = 0;
   let failed = 0;
 
   for (const user of users) {
     try {
+      console.log(`[Cron] Sending reminder to user ${user.id}`);
       await createReminderNotification(user.id);
       sent++;
+      console.log(`[Cron] Successfully sent reminder to user ${user.id}`);
     } catch (error) {
-      console.error(`Failed to send reminder to user ${user.id}:`, error);
+      console.error(`[Cron] Failed to send reminder to user ${user.id}:`, error);
       failed++;
     }
   }
 
-  console.log(`Daily reminders: ${sent} sent, ${failed} failed`);
+  console.log(`[Cron] Daily reminders complete: ${sent} sent, ${failed} failed, ${users.length} total`);
   return NextResponse.json({
     type: 'daily',
     sent,

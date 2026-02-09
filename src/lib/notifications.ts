@@ -214,13 +214,15 @@ export async function getUsersForDailyReminder(): Promise<
   // Get users who have reminders enabled
   const { data: profiles, error } = await supabase
     .from('profiles')
-    .select('id, reminder_time, timezone')
+    .select('id, reminder_time, timezone, push_notifications_enabled, email_reminders')
     .or('email_reminders.eq.true,push_notifications_enabled.eq.true');
 
   if (error) {
-    console.error('Failed to get users for reminder:', error);
+    console.error('[Reminder] Failed to get users for reminder:', error);
     return [];
   }
+
+  console.log(`[Reminder] Found ${profiles?.length || 0} users with notifications enabled`);
 
   // Filter to users where it's currently their reminder time and they haven't logged today
   const usersToRemind: { id: string; reminder_time: string }[] = [];
@@ -230,8 +232,11 @@ export async function getUsersForDailyReminder(): Promise<
     const reminderHour = parseInt((profile.reminder_time || '10:00').split(':')[0], 10);
     const currentHour = getCurrentHourInTimezone(timezone);
 
+    console.log(`[Reminder] User ${profile.id}: timezone=${timezone}, reminderHour=${reminderHour}, currentHour=${currentHour}, push=${profile.push_notifications_enabled}, email=${profile.email_reminders}`);
+
     // Only send if current hour matches reminder hour
     if (currentHour !== reminderHour) {
+      console.log(`[Reminder] User ${profile.id}: Skipping - hour mismatch (current: ${currentHour}, reminder: ${reminderHour})`);
       continue;
     }
 
@@ -245,11 +250,15 @@ export async function getUsersForDailyReminder(): Promise<
       .eq('is_nap', false)
       .single();
 
-    if (!todayLog) {
+    if (todayLog) {
+      console.log(`[Reminder] User ${profile.id}: Skipping - already logged today (${todayInUserTz})`);
+    } else {
+      console.log(`[Reminder] User ${profile.id}: Adding to reminder list - no log for ${todayInUserTz}`);
       usersToRemind.push({ id: profile.id, reminder_time: profile.reminder_time });
     }
   }
 
+  console.log(`[Reminder] Total users to remind: ${usersToRemind.length}`);
   return usersToRemind;
 }
 
