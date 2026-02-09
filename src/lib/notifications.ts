@@ -211,34 +211,24 @@ export async function getUsersForDailyReminder(): Promise<
 > {
   const supabase = getSupabaseAdmin();
 
-  // Get users who have reminders enabled
+  // Get users who have push notifications enabled
   const { data: profiles, error } = await supabase
     .from('profiles')
-    .select('id, reminder_time, timezone, push_notifications_enabled, email_reminders')
-    .or('email_reminders.eq.true,push_notifications_enabled.eq.true');
+    .select('id, reminder_time, timezone, push_notifications_enabled')
+    .eq('push_notifications_enabled', true);
 
   if (error) {
     console.error('[Reminder] Failed to get users for reminder:', error);
     return [];
   }
 
-  console.log(`[Reminder] Found ${profiles?.length || 0} users with notifications enabled`);
+  console.log(`[Reminder] Found ${profiles?.length || 0} users with push notifications enabled`);
 
-  // Filter to users where it's currently their reminder time and they haven't logged today
+  // Filter to users who haven't logged today
   const usersToRemind: { id: string; reminder_time: string }[] = [];
 
   for (const profile of profiles || []) {
-    const timezone = profile.timezone || 'America/New_York'; // Default to Eastern
-    const reminderHour = parseInt((profile.reminder_time || '10:00').split(':')[0], 10);
-    const currentHour = getCurrentHourInTimezone(timezone);
-
-    console.log(`[Reminder] User ${profile.id}: timezone=${timezone}, reminderHour=${reminderHour}, currentHour=${currentHour}, push=${profile.push_notifications_enabled}, email=${profile.email_reminders}`);
-
-    // Only send if current hour matches reminder hour
-    if (currentHour !== reminderHour) {
-      console.log(`[Reminder] User ${profile.id}: Skipping - hour mismatch (current: ${currentHour}, reminder: ${reminderHour})`);
-      continue;
-    }
+    const timezone = profile.timezone || 'America/New_York';
 
     // Check if user hasn't logged today (in their timezone)
     const todayInUserTz = getTodayInTimezone(timezone);
