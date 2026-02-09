@@ -25,6 +25,24 @@ export function PushNotificationHandler() {
       });
     };
 
+    // Clear badge immediately when app opens
+    const clearBadge = async () => {
+      try {
+        await waitForCapacitor();
+        const cap = (window as any).Capacitor;
+        if (!cap.isNativePlatform()) return;
+
+        const { PushNotifications } = await import('@capacitor/push-notifications');
+        await PushNotifications.removeAllDeliveredNotifications();
+        console.log('[Push] Badge cleared on app open');
+      } catch (e) {
+        console.log('[Push] Could not clear badge on startup:', e);
+      }
+    };
+
+    // Clear badge right away (don't wait)
+    clearBadge();
+
     const initPushNotifications = async () => {
       // Wait up to 3 seconds for Capacitor
       const timeout = new Promise<void>((_, reject) =>
