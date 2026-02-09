@@ -3,13 +3,22 @@ import { createClient } from '@/lib/supabase/server';
 import { sendPushNotification, getLastApnsDebug } from '@/lib/push';
 
 // Test endpoint to send a push notification to the current user
+// GET method for easy browser testing
+export async function GET(request: Request) {
+  return sendTestNotification(request);
+}
+
 export async function POST(request: Request) {
+  return sendTestNotification(request);
+}
+
+async function sendTestNotification(request: Request) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized - please open this in the Recover app or while logged in' }, { status: 401 });
     }
 
     // Check for delay parameter (gives user time to close app)
