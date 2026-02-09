@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui';
 import { ManageSubscriptionButton } from '@/components/ManageSubscriptionButton';
 import { ProUpgradeSuccessModal } from '@/components/ProUpgradeSuccessModal';
+import { TestNotificationButton } from '@/components/TestNotificationButton';
 
 // Settings item component
 function SettingsItem({
@@ -181,6 +182,9 @@ export default async function SettingsPage() {
         ) : (
           <ManageSubscriptionButton />
         )}
+
+        {/* Test Notifications */}
+        <TestNotificationButton />
 
         {/* Sign out */}
         <form action="/auth/signout" method="post">
