@@ -10,28 +10,27 @@ import {
 
 // Verify the request is from a trusted source (Vercel Cron or similar)
 function verifyRequest(headersList: Headers): boolean {
-  // Vercel Cron jobs include this header automatically
+  // Vercel Cron jobs include this header or user-agent
   const vercelCronHeader = headersList.get('x-vercel-cron');
-  if (vercelCronHeader) {
+  const userAgent = headersList.get('user-agent') || '';
+
+  if (vercelCronHeader || userAgent.includes('vercel-cron')) {
+    console.log('[Cron] Verified as Vercel cron job');
     return true;
   }
 
   const cronSecret = process.env.CRON_SECRET;
 
-  // In production, require CRON_SECRET
-  if (process.env.NODE_ENV === 'production' && !cronSecret) {
-    console.error('CRON_SECRET not set in production - rejecting request');
-    return false;
+  // Check for authorization header with secret
+  if (cronSecret) {
+    const authHeader = headersList.get('authorization');
+    if (authHeader === `Bearer ${cronSecret}`) {
+      return true;
+    }
   }
 
-  // In development without secret, allow requests
-  if (!cronSecret) {
-    console.warn('CRON_SECRET not set - allowing requests (dev only)');
-    return true;
-  }
-
-  const authHeader = headersList.get('authorization');
-  return authHeader === `Bearer ${cronSecret}`;
+  console.error('[Cron] Unauthorized request - not from Vercel cron');
+  return false;
 }
 
 // Daily reminder handler - run at evening (e.g., 8 PM)
