@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
   LineChart,
@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import type { SleepLog, Profile } from '@/types';
 import { calculateRecoveryScore } from '@/lib/utils';
+import { FadeIn, StaggerContainer, StaggerItem } from './AnimatedDashboard';
 
 interface DashboardProChartsProps {
   sleepLogs: SleepLog[];
@@ -188,47 +189,62 @@ export function DashboardProCharts({ sleepLogs, profile }: DashboardProChartsPro
   if (sleepLogs.length < 3) return null;
 
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Crown className="w-4 h-4 text-pro-accent" />
-          <span className="font-medium text-text-primary">Pro Analytics</span>
-        </div>
-        <Link
-          href="/dashboard/insights"
-          className="text-xs text-pro-accent hover:text-pro-accent/80 flex items-center gap-1"
+    <FadeIn delay={0.4}>
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5, duration: 0.4 }}
+          className="px-4 py-3 border-b border-border flex items-center justify-between"
         >
-          View all
-          <ChevronRight className="w-3 h-3" />
-        </Link>
-      </div>
-
-      {/* Charts Grid */}
-      <div className="p-4 space-y-4">
-        {/* Recovery Score Chart */}
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Target className="w-3.5 h-3.5 text-success" />
-            <span className="text-xs text-text-muted">Recovery Trend (7 days)</span>
+          <div className="flex items-center gap-2">
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.6, type: 'spring', stiffness: 200 }}
+            >
+              <Crown className="w-4 h-4 text-pro-accent" />
+            </motion.div>
+            <span className="font-medium text-text-primary">Pro Analytics</span>
           </div>
-          <MiniRecoveryChart sleepLogs={sleepLogs} profile={profile} />
-        </div>
+          <Link
+            href="/dashboard/insights"
+            className="text-xs text-pro-accent hover:text-pro-accent/80 flex items-center gap-1"
+          >
+            View all
+            <ChevronRight className="w-3 h-3" />
+          </Link>
+        </motion.div>
 
-        {/* Duration Chart */}
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Clock className="w-3.5 h-3.5 text-primary" />
-            <span className="text-xs text-text-muted">Sleep Duration vs Goal</span>
-          </div>
-          <MiniDurationChart sleepLogs={sleepLogs} profile={profile} />
-        </div>
+        {/* Charts Grid with stagger */}
+        <StaggerContainer staggerDelay={0.15} className="p-4 space-y-4">
+          {/* Recovery Score Chart */}
+          <StaggerItem>
+            <div className="flex items-center gap-2 mb-2">
+              <Target className="w-3.5 h-3.5 text-success" />
+              <span className="text-xs text-text-muted">Recovery Trend (7 days)</span>
+            </div>
+            <MiniRecoveryChart sleepLogs={sleepLogs} profile={profile} />
+          </StaggerItem>
 
-        {/* Sleep Debt */}
-        <div className="pt-2 border-t border-border">
-          <SleepDebtMini sleepLogs={sleepLogs} profile={profile} />
-        </div>
+          {/* Duration Chart */}
+          <StaggerItem>
+            <div className="flex items-center gap-2 mb-2">
+              <Clock className="w-3.5 h-3.5 text-primary" />
+              <span className="text-xs text-text-muted">Sleep Duration vs Goal</span>
+            </div>
+            <MiniDurationChart sleepLogs={sleepLogs} profile={profile} />
+          </StaggerItem>
+
+          {/* Sleep Debt */}
+          <StaggerItem>
+            <div className="pt-2 border-t border-border">
+              <SleepDebtMini sleepLogs={sleepLogs} profile={profile} />
+            </div>
+          </StaggerItem>
+        </StaggerContainer>
       </div>
-    </div>
+    </FadeIn>
   );
 }

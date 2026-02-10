@@ -5,20 +5,9 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import {
   Moon,
   Plus,
-  History,
-  User,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Clock,
-  Star,
-  Zap,
   ChevronRight,
   ClipboardCheck,
   Lightbulb,
-  Check,
-  Flame,
-  Crown,
   CloudSun,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
@@ -36,8 +25,10 @@ import { ShareStats } from '@/components/ShareStats';
 import { ClientGreeting } from '@/components/ClientGreeting';
 import { ReviewPrompt } from '@/components/ReviewPrompt';
 import { MilestoneReport } from '@/components/MilestoneReport';
+import { AnimatedRecoveryCard } from '@/components/AnimatedRecoveryCard';
+import { AnimatedStreakWidget, AnimatedWeeklyTrend, AnimatedCard, AnimatedListItem } from '@/components/AnimatedWidgets';
 
-// Recovery Score display component
+// Recovery Score display component (now uses animated client component)
 function RecoveryScoreCard({
   sleepLog,
   profile,
@@ -50,82 +41,22 @@ function RecoveryScoreCard({
   const bgColorClass = getRecoveryBgColor(recovery.level);
 
   return (
-    <div className="bg-card rounded-2xl border border-border p-6">
-      <div className="text-center mb-6">
-        <p className="text-text-secondary text-sm uppercase tracking-wide mb-2">
-          Recovery Score
-        </p>
-        <div className={`text-7xl font-bold ${colorClass} mb-2`}>{recovery.score}</div>
-        <p className="text-text-primary font-medium">{recovery.message.split('—')[0].trim()}</p>
-        <p className="text-text-secondary text-sm">{recovery.message.split('—')[1]?.trim()}</p>
-      </div>
-
-      {/* Progress bar */}
-      <div className="h-2 bg-background rounded-full overflow-hidden mb-6">
-        <div
-          className={`h-full ${bgColorClass} transition-all duration-500`}
-          style={{ width: `${recovery.score}%` }}
-        />
-      </div>
-
-      {/* Stats grid */}
-      <div className="grid grid-cols-3 gap-4 text-center">
-        <div>
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <Clock className="w-4 h-4 text-text-muted" />
-          </div>
-          <p className="text-lg font-semibold text-text-primary">
-            {formatDuration(sleepLog.duration_minutes)}
-          </p>
-          <p className="text-xs text-text-muted">Duration</p>
-        </div>
-        <div>
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <Star className="w-4 h-4 text-text-muted" />
-          </div>
-          <p className="text-lg font-semibold text-text-primary">{sleepLog.quality}/5</p>
-          <p className="text-xs text-text-muted">Quality</p>
-        </div>
-        <div>
-          <div className="flex items-center justify-center gap-1 mb-1">
-            <Zap className="w-4 h-4 text-text-muted" />
-          </div>
-          <p className="text-lg font-semibold text-text-primary">{sleepLog.energy}/5</p>
-          <p className="text-xs text-text-muted">Energy</p>
-        </div>
-      </div>
-    </div>
+    <AnimatedRecoveryCard
+      score={recovery.score}
+      level={recovery.level}
+      message={recovery.message}
+      duration={formatDuration(sleepLog.duration_minutes)}
+      quality={sleepLog.quality}
+      energy={sleepLog.energy}
+      colorClass={colorClass}
+      bgColorClass={bgColorClass}
+    />
   );
 }
 
-// Streak widget component
-function StreakWidget({ currentStreak, longestStreak }: { currentStreak: number; longestStreak: number }) {
-  if (currentStreak === 0) return null;
+// Streak widget - now uses animated version directly
 
-  return (
-    <div className="bg-card rounded-xl border border-border p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center">
-            <Flame className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <p className="text-sm text-text-secondary">Current Streak</p>
-            <p className="text-2xl font-bold text-text-primary">{currentStreak} {currentStreak === 1 ? 'day' : 'days'}</p>
-          </div>
-        </div>
-        {longestStreak > currentStreak && (
-          <div className="text-right">
-            <p className="text-xs text-text-muted">Best</p>
-            <p className="text-sm font-medium text-text-secondary">{longestStreak} days</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Weekly trend component
+// Weekly trend - now uses animated version
 function WeeklyTrend({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: Profile }) {
   if (sleepLogs.length < 2) return null;
 
@@ -135,26 +66,10 @@ function WeeklyTrend({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: P
   const previousScore = scores[1];
   const trend = latestScore - previousScore;
 
-  const TrendIcon = trend > 0 ? TrendingUp : trend < 0 ? TrendingDown : Minus;
-  const trendColor = trend > 0 ? 'text-success' : trend < 0 ? 'text-danger' : 'text-text-muted';
-
-  return (
-    <div className="bg-card rounded-xl border border-border p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm text-text-secondary mb-1">7-day average</p>
-          <p className="text-2xl font-bold text-text-primary">{avgScore}</p>
-        </div>
-        <div className={`flex items-center gap-1 ${trendColor}`}>
-          <TrendIcon className="w-5 h-5" />
-          <span className="font-medium">{trend > 0 ? '+' : ''}{trend}</span>
-        </div>
-      </div>
-    </div>
-  );
+  return <AnimatedWeeklyTrend avgScore={avgScore} trend={trend} />;
 }
 
-// Checklist widget component
+// Checklist widget component with animation
 function ChecklistWidget({ checklist }: { checklist: ChecklistLog | null }) {
   const checklistItems = [
     'exercised',
@@ -174,60 +89,64 @@ function ChecklistWidget({ checklist }: { checklist: ChecklistLog | null }) {
   const percentage = Math.round((checkedCount / totalItems) * 100);
 
   return (
-    <Link href="/dashboard/checklist" className="block">
-      <div className="bg-card rounded-xl border border-border p-4 hover:bg-card-hover transition-colors">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <ClipboardCheck className="w-5 h-5 text-primary" />
+    <AnimatedCard delay={0.2}>
+      <Link href="/dashboard/checklist" className="block">
+        <div className="bg-card rounded-xl border border-border p-4 hover:bg-card-hover transition-colors">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                <ClipboardCheck className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-medium text-text-primary">Pre-Sleep Checklist</p>
+                <p className="text-sm text-text-secondary">
+                  {checkedCount === 0 ? 'Not started' : `${checkedCount}/${totalItems} completed`}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-text-primary">Pre-Sleep Checklist</p>
-              <p className="text-sm text-text-secondary">
-                {checkedCount === 0 ? 'Not started' : `${checkedCount}/${totalItems} completed`}
-              </p>
-            </div>
+            <ChevronRight className="w-5 h-5 text-text-muted" />
           </div>
-          <ChevronRight className="w-5 h-5 text-text-muted" />
+          <div className="h-1.5 bg-background rounded-full overflow-hidden">
+            <div
+              className={`h-full transition-all ${
+                percentage >= 75 ? 'bg-success' : percentage >= 50 ? 'bg-warning' : 'bg-primary'
+              }`}
+              style={{ width: `${percentage}%` }}
+            />
+          </div>
         </div>
-        <div className="h-1.5 bg-background rounded-full overflow-hidden">
-          <div
-            className={`h-full transition-all ${
-              percentage >= 75 ? 'bg-success' : percentage >= 50 ? 'bg-warning' : 'bg-primary'
-            }`}
-            style={{ width: `${percentage}%` }}
-          />
-        </div>
-      </div>
-    </Link>
+      </Link>
+    </AnimatedCard>
   );
 }
 
-// Insights teaser component
+// Insights teaser component with animation
 function InsightsTeaser({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: Profile }) {
   if (sleepLogs.length < 3) {
     return (
-      <div className="bg-card rounded-xl border border-border p-4">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
-            <Lightbulb className="w-5 h-5 text-warning" />
+      <AnimatedCard delay={0.25}>
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
+              <Lightbulb className="w-5 h-5 text-warning" />
+            </div>
+            <div>
+              <p className="font-medium text-text-primary">Insights</p>
+              <p className="text-sm text-text-secondary">Log 3+ nights to unlock</p>
+            </div>
           </div>
-          <div>
-            <p className="font-medium text-text-primary">Insights</p>
-            <p className="text-sm text-text-secondary">Log 3+ nights to unlock</p>
+          <div className="flex gap-1 mt-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className={`h-1.5 flex-1 rounded-full ${
+                  sleepLogs.length >= i ? 'bg-warning' : 'bg-background'
+                }`}
+              />
+            ))}
           </div>
         </div>
-        <div className="flex gap-1 mt-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className={`h-1.5 flex-1 rounded-full ${
-                sleepLogs.length >= i ? 'bg-warning' : 'bg-background'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
+      </AnimatedCard>
     );
   }
 
@@ -236,29 +155,31 @@ function InsightsTeaser({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
   const qualityTrend = avgQuality >= 3.5 ? 'improving' : 'needs attention';
 
   return (
-    <Link href="/dashboard/insights" className="block">
-      <div className="bg-card rounded-xl border border-border p-4 hover:bg-card-hover transition-colors">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
-              <Lightbulb className="w-5 h-5 text-warning" />
+    <AnimatedCard delay={0.25}>
+      <Link href="/dashboard/insights" className="block">
+        <div className="bg-card rounded-xl border border-border p-4 hover:bg-card-hover transition-colors">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
+                <Lightbulb className="w-5 h-5 text-warning" />
+              </div>
+              <div>
+                <p className="font-medium text-text-primary">Insights</p>
+                <p className="text-sm text-text-secondary">3 insights available</p>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-text-primary">Insights</p>
-              <p className="text-sm text-text-secondary">3 insights available</p>
-            </div>
+            <ChevronRight className="w-5 h-5 text-text-muted" />
           </div>
-          <ChevronRight className="w-5 h-5 text-text-muted" />
+          <p className="text-sm text-text-secondary mt-2">
+            Your sleep quality is {qualityTrend}. Tap to see more insights.
+          </p>
         </div>
-        <p className="text-sm text-text-secondary mt-2">
-          Your sleep quality is {qualityTrend}. Tap to see more insights.
-        </p>
-      </div>
-    </Link>
+      </Link>
+    </AnimatedCard>
   );
 }
 
-// Recent logs list
+// Recent logs list with staggered animations
 function RecentLogs({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: Profile }) {
   // Filter out naps - this section is for night sleep only
   const nightLogs = sleepLogs.filter((log) => !log.is_nap);
@@ -268,34 +189,38 @@ function RecentLogs({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: Pr
   const recentLogs = nightLogs.slice(1, 4);
 
   return (
-    <div className="bg-card rounded-xl border border-border overflow-hidden">
-      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-        <h3 className="font-medium text-text-primary">Recent Nights</h3>
-        <Link
-          href="/dashboard/history"
-          className="text-sm text-primary hover:text-primary-hover flex items-center gap-1"
-        >
-          View all
-          <ChevronRight className="w-4 h-4" />
-        </Link>
-      </div>
-      <div className="divide-y divide-border">
-        {recentLogs.map((log) => {
-          const recovery = calculateRecoveryScore(log, profile);
-          const colorClass = getRecoveryColor(recovery.level);
+    <AnimatedCard delay={0.5}>
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+          <h3 className="font-medium text-text-primary">Recent Nights</h3>
+          <Link
+            href="/dashboard/history"
+            className="text-sm text-primary hover:text-primary-hover flex items-center gap-1"
+          >
+            View all
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+        <div className="divide-y divide-border">
+          {recentLogs.map((log, index) => {
+            const recovery = calculateRecoveryScore(log, profile);
+            const colorClass = getRecoveryColor(recovery.level);
 
-          return (
-            <div key={log.id} className="px-4 py-3 flex items-center justify-between">
-              <div>
-                <p className="text-text-primary font-medium">{formatDate(log.date)}</p>
-                <p className="text-sm text-text-muted">{formatDuration(log.duration_minutes)}</p>
-              </div>
-              <div className={`text-2xl font-bold ${colorClass}`}>{recovery.score}</div>
-            </div>
-          );
-        })}
+            return (
+              <AnimatedListItem key={log.id} index={index}>
+                <div className="px-4 py-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-text-primary font-medium">{formatDate(log.date)}</p>
+                    <p className="text-sm text-text-muted">{formatDuration(log.duration_minutes)}</p>
+                  </div>
+                  <div className={`text-2xl font-bold ${colorClass}`}>{recovery.score}</div>
+                </div>
+              </AnimatedListItem>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </AnimatedCard>
   );
 }
 
@@ -455,7 +380,7 @@ export default async function DashboardPage() {
             </div>
 
             {/* Streak widget */}
-            <StreakWidget currentStreak={currentStreak} longestStreak={longestStreak} />
+            <AnimatedStreakWidget currentStreak={currentStreak} longestStreak={longestStreak} />
 
             {/* Weekly trend */}
             <WeeklyTrend sleepLogs={sleepLogs} profile={profile} />

@@ -32,6 +32,7 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.90.1",
     "apns2": "^12.2.0",
+    "framer-motion": "^12.34.0",
     "html-to-image": "^1.11.13",
     "jose": "^5.2.0",
     "lucide-react": "^0.562.0",
