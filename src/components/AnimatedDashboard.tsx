@@ -63,7 +63,7 @@ export function AnimatedNumber({
   );
 }
 
-// Wrapper that fades and slides in
+// Wrapper that fades and slides in when visible
 export function FadeIn({
   children,
   delay = 0,
@@ -75,6 +75,9 @@ export function FadeIn({
   direction?: 'up' | 'down' | 'left' | 'right';
   className?: string;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-50px' });
+
   const offset = {
     up: { y: 30, x: 0 },
     down: { y: -30, x: 0 },
@@ -84,11 +87,12 @@ export function FadeIn({
 
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, ...offset[direction] }}
-      animate={{ opacity: 1, y: 0, x: 0 }}
+      animate={isInView ? { opacity: 1, y: 0, x: 0 } : { opacity: 0, ...offset[direction] }}
       transition={{
         duration: 0.6,
-        delay,
+        delay: isInView ? delay : 0,
         ease: [0.25, 0.46, 0.45, 0.94],
       }}
       className={className}
@@ -108,10 +112,14 @@ export function StaggerContainer({
   staggerDelay?: number;
   className?: string;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-30px' });
+
   return (
     <motion.div
+      ref={ref}
       initial="hidden"
-      animate="visible"
+      animate={isInView ? "visible" : "hidden"}
       variants={{
         hidden: { opacity: 0 },
         visible: {
@@ -218,13 +226,17 @@ export function ScaleIn({
   delay?: number;
   className?: string;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-30px' });
+
   return (
     <motion.div
+      ref={ref}
       initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
+      animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
       transition={{
         duration: 0.5,
-        delay,
+        delay: isInView ? delay : 0,
         ease: [0.25, 0.46, 0.45, 0.94],
       }}
       className={className}

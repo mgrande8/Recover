@@ -1,6 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 import Link from 'next/link';
 import {
   LineChart,
@@ -186,23 +187,26 @@ function SleepDebtMini({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile:
 }
 
 export function DashboardProCharts({ sleepLogs, profile }: DashboardProChartsProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-30px' });
+
   if (sleepLogs.length < 3) return null;
 
   return (
-    <FadeIn delay={0.4}>
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
+    <FadeIn delay={0.2}>
+      <div ref={ref} className="bg-card rounded-xl border border-border overflow-hidden">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.5, duration: 0.4 }}
+          animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -10 }}
+          transition={{ delay: 0.1, duration: 0.4 }}
           className="px-4 py-3 border-b border-border flex items-center justify-between"
         >
           <div className="flex items-center gap-2">
             <motion.div
               initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: 0.6, type: 'spring', stiffness: 200 }}
+              animate={isInView ? { scale: 1, rotate: 0 } : { scale: 0, rotate: -180 }}
+              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
             >
               <Crown className="w-4 h-4 text-pro-accent" />
             </motion.div>
