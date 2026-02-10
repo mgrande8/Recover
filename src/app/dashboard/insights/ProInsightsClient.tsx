@@ -10,6 +10,7 @@ import {
   WeeklyComparisonChart,
   InsightsRecommendations,
 } from '@/components/ProInsights';
+import { AnimatedChartContainer } from '@/components/AnimatedInsights';
 import type { SleepLog, ChecklistLog, Profile } from '@/types';
 
 interface ProInsightsClientProps {
@@ -27,58 +28,76 @@ export function ProInsightsClient({ sleepLogs, checklistLogs, profile }: ProInsi
   return (
     <div className="space-y-4">
       {/* Date range selector */}
-      <div className="flex items-center gap-2 bg-card rounded-lg p-1 border border-border">
-        {(['7', '14', '30'] as const).map((range) => (
-          <button
-            key={range}
-            onClick={() => setDateRange(range)}
-            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
-              dateRange === range
-                ? 'bg-primary text-white'
-                : 'text-text-muted hover:text-text-primary hover:bg-background'
-            }`}
-          >
-            {range} days
-          </button>
-        ))}
-      </div>
+      <AnimatedChartContainer delay={0}>
+        <div className="flex items-center gap-2 bg-card rounded-lg p-1 border border-border">
+          {(['7', '14', '30'] as const).map((range) => (
+            <button
+              key={range}
+              onClick={() => setDateRange(range)}
+              className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                dateRange === range
+                  ? 'bg-primary text-white'
+                  : 'text-text-muted hover:text-text-primary hover:bg-background'
+              }`}
+            >
+              {range} days
+            </button>
+          ))}
+        </div>
+      </AnimatedChartContainer>
 
       {/* Charts */}
       {sleepLogs.length >= 3 && (
         <>
           {/* Sleep Duration Trends */}
-          <SleepDurationChart sleepLogs={filteredLogs} profile={profile} />
+          <AnimatedChartContainer delay={0.1}>
+            <SleepDurationChart sleepLogs={filteredLogs} profile={profile} />
+          </AnimatedChartContainer>
 
           {/* Recovery Score Trend */}
-          <RecoveryScoreChart sleepLogs={filteredLogs} profile={profile} />
+          <AnimatedChartContainer delay={0.15}>
+            <RecoveryScoreChart sleepLogs={filteredLogs} profile={profile} />
+          </AnimatedChartContainer>
 
           {/* Sleep Quality & Energy */}
-          <SleepQualityChart sleepLogs={filteredLogs} />
+          <AnimatedChartContainer delay={0.2}>
+            <SleepQualityChart sleepLogs={filteredLogs} />
+          </AnimatedChartContainer>
 
           {/* Sleep Timing Patterns */}
-          <SleepTimingChart sleepLogs={filteredLogs} />
+          <AnimatedChartContainer delay={0.25}>
+            <SleepTimingChart sleepLogs={filteredLogs} />
+          </AnimatedChartContainer>
 
           {/* Sleep Consistency Score */}
-          <SleepConsistencyCard sleepLogs={sleepLogs} profile={profile} />
+          <AnimatedChartContainer delay={0.3}>
+            <SleepConsistencyCard sleepLogs={sleepLogs} profile={profile} />
+          </AnimatedChartContainer>
 
           {/* Weekly Comparison */}
-          <WeeklyComparisonChart sleepLogs={sleepLogs} profile={profile} />
+          <AnimatedChartContainer delay={0.35}>
+            <WeeklyComparisonChart sleepLogs={sleepLogs} profile={profile} />
+          </AnimatedChartContainer>
 
           {/* Personalized Insights */}
-          <InsightsRecommendations
-            sleepLogs={sleepLogs}
-            checklistLogs={checklistLogs}
-            profile={profile}
-          />
+          <AnimatedChartContainer delay={0.4}>
+            <InsightsRecommendations
+              sleepLogs={sleepLogs}
+              checklistLogs={checklistLogs}
+              profile={profile}
+            />
+          </AnimatedChartContainer>
         </>
       )}
 
       {sleepLogs.length < 3 && (
-        <div className="bg-card rounded-xl border border-border p-6 text-center">
-          <p className="text-text-muted">
-            Log at least 3 nights to view visual analytics.
-          </p>
-        </div>
+        <AnimatedChartContainer delay={0.1}>
+          <div className="bg-card rounded-xl border border-border p-6 text-center">
+            <p className="text-text-muted">
+              Log at least 3 nights to view visual analytics.
+            </p>
+          </div>
+        </AnimatedChartContainer>
       )}
     </div>
   );

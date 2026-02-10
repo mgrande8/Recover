@@ -30,8 +30,15 @@ import { Button } from '@/components/ui';
 import { calculateRecoveryScore, formatDuration } from '@/lib/utils';
 import type { Profile, SleepLog, ChecklistLog } from '@/types';
 import { ProInsightsClient } from './ProInsightsClient';
+import {
+  AnimatedInsightCard,
+  AnimatedSectionHeader,
+  AnimatedTipsList,
+  AnimatedChartContainer,
+  AnimatedStatsGrid,
+} from '@/components/AnimatedInsights';
 
-// Insight card component
+// Insight card component with animation
 function InsightCard({
   icon: Icon,
   iconColor,
@@ -40,6 +47,7 @@ function InsightCard({
   value,
   description,
   trend,
+  index = 0,
 }: {
   icon: React.ElementType;
   iconColor: string;
@@ -48,56 +56,61 @@ function InsightCard({
   value: string;
   description: string;
   trend?: 'up' | 'down' | 'neutral';
+  index?: number;
 }) {
   return (
-    <div className="bg-card rounded-xl border border-border p-4">
-      <div className="flex items-start gap-4">
-        <div className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center flex-shrink-0`}>
-          <Icon className={`w-6 h-6 ${iconColor}`} />
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-sm text-text-secondary">{title}</p>
-            {trend && (
-              <div className={`flex items-center gap-1 ${
-                trend === 'up' ? 'text-success' : trend === 'down' ? 'text-danger' : 'text-text-muted'
-              }`}>
-                {trend === 'up' ? <TrendingUp className="w-4 h-4" /> :
-                 trend === 'down' ? <TrendingDown className="w-4 h-4" /> : null}
-              </div>
-            )}
+    <AnimatedInsightCard index={index}>
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex items-start gap-4">
+          <div className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center flex-shrink-0`}>
+            <Icon className={`w-6 h-6 ${iconColor}`} />
           </div>
-          <p className="text-2xl font-bold text-text-primary mb-1">{value}</p>
-          <p className="text-sm text-text-secondary">{description}</p>
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-sm text-text-secondary">{title}</p>
+              {trend && (
+                <div className={`flex items-center gap-1 ${
+                  trend === 'up' ? 'text-success' : trend === 'down' ? 'text-danger' : 'text-text-muted'
+                }`}>
+                  {trend === 'up' ? <TrendingUp className="w-4 h-4" /> :
+                   trend === 'down' ? <TrendingDown className="w-4 h-4" /> : null}
+                </div>
+              )}
+            </div>
+            <p className="text-2xl font-bold text-text-primary mb-1">{value}</p>
+            <p className="text-sm text-text-secondary">{description}</p>
+          </div>
         </div>
       </div>
-    </div>
+    </AnimatedInsightCard>
   );
 }
 
-// Locked insight card for Pro features
-function LockedInsightCard({ title, description }: { title: string; description: string }) {
+// Locked insight card for Pro features with animation
+function LockedInsightCard({ title, description, index = 0 }: { title: string; description: string; index?: number }) {
   return (
-    <div className="bg-card rounded-xl border border-border p-4 opacity-60">
-      <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-xl bg-card-hover flex items-center justify-center flex-shrink-0">
-          <Lock className="w-6 h-6 text-text-muted" />
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <p className="text-sm text-text-secondary">{title}</p>
-            <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
-              PRO
-            </span>
+    <AnimatedInsightCard index={index}>
+      <div className="bg-card rounded-xl border border-border p-4 opacity-60">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-xl bg-card-hover flex items-center justify-center flex-shrink-0">
+            <Lock className="w-6 h-6 text-text-muted" />
           </div>
-          <p className="text-sm text-text-muted">{description}</p>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-sm text-text-secondary">{title}</p>
+              <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
+                PRO
+              </span>
+            </div>
+            <p className="text-sm text-text-muted">{description}</p>
+          </div>
         </div>
       </div>
-    </div>
+    </AnimatedInsightCard>
   );
 }
 
-// Sleep Debt Tracker (Pro Feature)
+// Sleep Debt Tracker (Pro Feature) with animation
 function SleepDebtTracker({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: Profile }) {
   const goalMinutes = profile.sleep_goal_hours * 60;
 
@@ -124,29 +137,31 @@ function SleepDebtTracker({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profi
   const daysToRecover = isDebt ? Math.ceil(debtHours / 0.5) : 0;
 
   return (
-    <div className="bg-card rounded-xl border border-border p-4">
-      <div className="flex items-start gap-4">
-        <div className={`w-12 h-12 rounded-xl ${isDebt ? 'bg-danger/10' : 'bg-success/10'} flex items-center justify-center flex-shrink-0`}>
-          <Battery className={`w-6 h-6 ${isDebt ? 'text-danger' : 'text-success'}`} />
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <p className="text-sm text-text-secondary">Sleep Debt Tracker</p>
-            <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
-              PRO
-            </span>
+    <AnimatedInsightCard index={0}>
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex items-start gap-4">
+          <div className={`w-12 h-12 rounded-xl ${isDebt ? 'bg-danger/10' : 'bg-success/10'} flex items-center justify-center flex-shrink-0`}>
+            <Battery className={`w-6 h-6 ${isDebt ? 'text-danger' : 'text-success'}`} />
           </div>
-          <p className={`text-2xl font-bold ${isDebt ? 'text-danger' : 'text-success'} mb-1`}>
-            {isDebt ? '-' : '+'}{debtHours.toFixed(1)}h
-          </p>
-          <p className="text-sm text-text-secondary">
-            {isDebt
-              ? `You owe ${debtHours.toFixed(1)} hours of sleep. At 30 min extra per night, you'll recover in ~${daysToRecover} days.`
-              : `You're ahead! You've banked ${debtHours.toFixed(1)} hours of extra sleep over the past 2 weeks.`}
-          </p>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-sm text-text-secondary">Sleep Debt Tracker</p>
+              <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
+                PRO
+              </span>
+            </div>
+            <p className={`text-2xl font-bold ${isDebt ? 'text-danger' : 'text-success'} mb-1`}>
+              {isDebt ? '-' : '+'}{debtHours.toFixed(1)}h
+            </p>
+            <p className="text-sm text-text-secondary">
+              {isDebt
+                ? `You owe ${debtHours.toFixed(1)} hours of sleep. At 30 min extra per night, you'll recover in ~${daysToRecover} days.`
+                : `You're ahead! You've banked ${debtHours.toFixed(1)} hours of extra sleep over the past 2 weeks.`}
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+    </AnimatedInsightCard>
   );
 }
 
@@ -158,7 +173,7 @@ function normalizeDate(dateStr: string): string {
   return date.toISOString().split('T')[0];
 }
 
-// Correlation Analysis (Pro Feature)
+// Correlation Analysis (Pro Feature) with animation
 function CorrelationAnalysis({ sleepLogs, checklistLogs, profile }: { sleepLogs: SleepLog[]; checklistLogs: ChecklistLog[]; profile: Profile }) {
   const requiredChecklists = 5;
   const currentCount = checklistLogs.length;
@@ -166,33 +181,35 @@ function CorrelationAnalysis({ sleepLogs, checklistLogs, profile }: { sleepLogs:
 
   if (currentCount < requiredChecklists) {
     return (
-      <div className="bg-card rounded-xl border border-border p-4">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <BarChart3 className="w-6 h-6 text-primary" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <p className="text-sm text-text-secondary">Correlation Analysis</p>
-              <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
-                PRO
-              </span>
+      <AnimatedInsightCard index={1}>
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <BarChart3 className="w-6 h-6 text-primary" />
             </div>
-            <p className="text-sm text-text-primary font-medium mb-2">
-              🎯 {requiredChecklists - currentCount} more night{requiredChecklists - currentCount === 1 ? "'s" : "s'"} checklist to unlock!
-            </p>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 h-2 bg-background rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all duration-300"
-                  style={{ width: `${progress * 100}%` }}
-                />
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-sm text-text-secondary">Correlation Analysis</p>
+                <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
+                  PRO
+                </span>
               </div>
-              <span className="text-xs text-text-muted font-medium">{currentCount}/{requiredChecklists}</span>
+              <p className="text-sm text-text-primary font-medium mb-2">
+                🎯 {requiredChecklists - currentCount} more night{requiredChecklists - currentCount === 1 ? "'s" : "s'"} checklist to unlock!
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-2 bg-background rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all duration-300"
+                    style={{ width: `${progress * 100}%` }}
+                  />
+                </div>
+                <span className="text-xs text-text-muted font-medium">{currentCount}/{requiredChecklists}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </AnimatedInsightCard>
     );
   }
 
@@ -247,55 +264,57 @@ function CorrelationAnalysis({ sleepLogs, checklistLogs, profile }: { sleepLogs:
   const topCorrelation = correlations[0];
 
   return (
-    <div className="bg-card rounded-xl border border-border p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <BarChart3 className="w-5 h-5 text-primary" />
-        <p className="font-semibold text-text-primary">Correlation Analysis</p>
-        <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
-          PRO
-        </span>
-      </div>
+    <AnimatedInsightCard index={1}>
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex items-center gap-2 mb-4">
+          <BarChart3 className="w-5 h-5 text-primary" />
+          <p className="font-semibold text-text-primary">Correlation Analysis</p>
+          <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
+            PRO
+          </span>
+        </div>
 
-      <div className="space-y-3">
-        {correlations.slice(0, 4).map((corr) => {
-          const Icon = corr.icon;
-          const isPositive = corr.impact > 0;
-          const impactPercent = Math.abs(corr.impact / 5 * 100);
+        <div className="space-y-3">
+          {correlations.slice(0, 4).map((corr) => {
+            const Icon = corr.icon;
+            const isPositive = corr.impact > 0;
+            const impactPercent = Math.abs(corr.impact / 5 * 100);
 
-          return (
-            <div key={corr.key} className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-background rounded-lg flex items-center justify-center">
-                <Icon className="w-4 h-4 text-text-muted" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-text-primary">{corr.label}</p>
-                <div className="h-1.5 bg-background rounded-full overflow-hidden mt-1">
-                  <div
-                    className={`h-full ${isPositive ? 'bg-success' : 'bg-danger'} transition-all`}
-                    style={{ width: `${Math.min(impactPercent, 100)}%` }}
-                  />
+            return (
+              <div key={corr.key} className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-background rounded-lg flex items-center justify-center">
+                  <Icon className="w-4 h-4 text-text-muted" />
                 </div>
+                <div className="flex-1">
+                  <p className="text-sm text-text-primary">{corr.label}</p>
+                  <div className="h-1.5 bg-background rounded-full overflow-hidden mt-1">
+                    <div
+                      className={`h-full ${isPositive ? 'bg-success' : 'bg-danger'} transition-all`}
+                      style={{ width: `${Math.min(impactPercent, 100)}%` }}
+                    />
+                  </div>
+                </div>
+                <span className={`text-sm font-medium ${isPositive ? 'text-success' : corr.impact < 0 ? 'text-danger' : 'text-text-muted'}`}>
+                  {isPositive ? '+' : ''}{corr.impact.toFixed(1)}
+                </span>
               </div>
-              <span className={`text-sm font-medium ${isPositive ? 'text-success' : corr.impact < 0 ? 'text-danger' : 'text-text-muted'}`}>
-                {isPositive ? '+' : ''}{corr.impact.toFixed(1)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
 
-      {topCorrelation && Math.abs(topCorrelation.impact) > 0.2 && (
-        <p className="text-xs text-text-muted mt-4 p-2 bg-background rounded-lg">
-          {topCorrelation.impact > 0
-            ? `${topCorrelation.label} has the biggest positive impact on your sleep quality.`
-            : `Skipping ${topCorrelation.label.toLowerCase()} tends to hurt your sleep quality.`}
-        </p>
-      )}
-    </div>
+        {topCorrelation && Math.abs(topCorrelation.impact) > 0.2 && (
+          <p className="text-xs text-text-muted mt-4 p-2 bg-background rounded-lg">
+            {topCorrelation.impact > 0
+              ? `${topCorrelation.label} has the biggest positive impact on your sleep quality.`
+              : `Skipping ${topCorrelation.label.toLowerCase()} tends to hurt your sleep quality.`}
+          </p>
+        )}
+      </div>
+    </AnimatedInsightCard>
   );
 }
 
-// Optimal Bedtime Calculator (Pro Feature)
+// Optimal Bedtime Calculator (Pro Feature) with animation
 function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: Profile }) {
   const requiredLogs = 7;
   // Filter out naps for this calculation
@@ -305,33 +324,35 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
 
   if (currentCount < requiredLogs) {
     return (
-      <div className="bg-card rounded-xl border border-border p-4">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center flex-shrink-0">
-            <Moon className="w-6 h-6 text-warning" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <p className="text-sm text-text-secondary">Optimal Bedtime</p>
-              <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
-                PRO
-              </span>
+      <AnimatedInsightCard index={2}>
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center flex-shrink-0">
+              <Moon className="w-6 h-6 text-warning" />
             </div>
-            <p className="text-sm text-text-primary font-medium mb-2">
-              🎯 {requiredLogs - currentCount} more {requiredLogs - currentCount === 1 ? 'night' : 'nights'} to unlock!
-            </p>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 h-2 bg-background rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-warning transition-all duration-300"
-                  style={{ width: `${progress * 100}%` }}
-                />
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-sm text-text-secondary">Optimal Bedtime</p>
+                <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
+                  PRO
+                </span>
               </div>
-              <span className="text-xs text-text-muted font-medium">{currentCount}/{requiredLogs}</span>
+              <p className="text-sm text-text-primary font-medium mb-2">
+                🎯 {requiredLogs - currentCount} more {requiredLogs - currentCount === 1 ? 'night' : 'nights'} to unlock!
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-2 bg-background rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-warning transition-all duration-300"
+                    style={{ width: `${progress * 100}%` }}
+                  />
+                </div>
+                <span className="text-xs text-text-muted font-medium">{currentCount}/{requiredLogs}</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </AnimatedInsightCard>
     );
   }
 
@@ -367,25 +388,27 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
     // Not enough reasonable bedtime data
     const needed = 3 - bedtimeQuality.length;
     return (
-      <div className="bg-card rounded-xl border border-border p-4">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center flex-shrink-0">
-            <Moon className="w-6 h-6 text-warning" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <p className="text-sm text-text-secondary">Optimal Bedtime</p>
-              <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
-                PRO
-              </span>
+      <AnimatedInsightCard index={2}>
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center flex-shrink-0">
+              <Moon className="w-6 h-6 text-warning" />
             </div>
-            <p className="text-sm text-text-primary font-medium mb-1">
-              🎯 {needed} more regular {needed === 1 ? 'night' : 'nights'} needed
-            </p>
-            <p className="text-xs text-text-muted">Log sleep with bedtimes between 5 PM - 5 AM for best results.</p>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-sm text-text-secondary">Optimal Bedtime</p>
+                <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
+                  PRO
+                </span>
+              </div>
+              <p className="text-sm text-text-primary font-medium mb-1">
+                🎯 {needed} more regular {needed === 1 ? 'night' : 'nights'} needed
+              </p>
+              <p className="text-xs text-text-muted">Log sleep with bedtimes between 5 PM - 5 AM for best results.</p>
+            </div>
           </div>
         </div>
-      </div>
+      </AnimatedInsightCard>
     );
   }
 
@@ -463,55 +486,59 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
   const formattedWakeTime = `${displayWakeHours}:${minutes.toString().padStart(2, '0')} ${wakeMeridian}`;
 
   return (
-    <div className="bg-card rounded-xl border border-border p-4">
-      <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center flex-shrink-0">
-          <Moon className="w-6 h-6 text-warning" />
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <p className="text-sm text-text-secondary">Optimal Bedtime</p>
-            <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
-              PRO
-            </span>
+    <AnimatedInsightCard index={2}>
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center flex-shrink-0">
+            <Moon className="w-6 h-6 text-warning" />
           </div>
-          <p className="text-2xl font-bold text-warning mb-1">{formattedTime}</p>
-          <p className="text-sm text-text-secondary">
-            Based on your sleep patterns near your typical bedtime, {formattedTime} gives you optimal recovery (avg score: {Math.round(bestWindow.avgScore)}).
-          </p>
-          <div className="flex items-center gap-2 mt-2 text-xs text-text-muted">
-            <Sun className="w-3.5 h-3.5" />
-            <span>Ideal wake time: {formattedWakeTime}</span>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-sm text-text-secondary">Optimal Bedtime</p>
+              <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
+                PRO
+              </span>
+            </div>
+            <p className="text-2xl font-bold text-warning mb-1">{formattedTime}</p>
+            <p className="text-sm text-text-secondary">
+              Based on your sleep patterns near your typical bedtime, {formattedTime} gives you optimal recovery (avg score: {Math.round(bestWindow.avgScore)}).
+            </p>
+            <div className="flex items-center gap-2 mt-2 text-xs text-text-muted">
+              <Sun className="w-3.5 h-3.5" />
+              <span>Ideal wake time: {formattedWakeTime}</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </AnimatedInsightCard>
   );
 }
 
-// Weekly Report Summary (Pro Feature)
+// Weekly Report Summary (Pro Feature) with animation
 function WeeklyReport({ sleepLogs, checklistLogs, profile }: { sleepLogs: SleepLog[]; checklistLogs: ChecklistLog[]; profile: Profile }) {
   const thisWeek = sleepLogs.slice(0, 7);
   const lastWeek = sleepLogs.slice(7, 14);
 
   if (thisWeek.length < 3) {
     return (
-      <div className="bg-card rounded-xl border border-border p-4">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center flex-shrink-0">
-            <Calendar className="w-6 h-6 text-success" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <p className="text-sm text-text-secondary">Weekly Report</p>
-              <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
-                PRO
-              </span>
+      <AnimatedInsightCard index={3}>
+        <div className="bg-card rounded-xl border border-border p-4">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center flex-shrink-0">
+              <Calendar className="w-6 h-6 text-success" />
             </div>
-            <p className="text-sm text-text-muted">Log at least 3 nights this week to generate your weekly report.</p>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-sm text-text-secondary">Weekly Report</p>
+                <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
+                  PRO
+                </span>
+              </div>
+              <p className="text-sm text-text-muted">Log at least 3 nights this week to generate your weekly report.</p>
+            </div>
           </div>
         </div>
-      </div>
+      </AnimatedInsightCard>
     );
   }
 
@@ -537,60 +564,62 @@ function WeeklyReport({ sleepLogs, checklistLogs, profile }: { sleepLogs: SleepL
   const worstNight = scoredLogs.reduce((worst, log) => log.score < worst.score ? log : worst, scoredLogs[0]);
 
   return (
-    <div className="bg-card rounded-xl border border-border p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Calendar className="w-5 h-5 text-success" />
-        <p className="font-semibold text-text-primary">Weekly Report</p>
-        <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
-          PRO
-        </span>
-      </div>
-
-      {/* Main stats */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-background rounded-lg p-3 text-center">
-          <p className="text-xs text-text-muted mb-1">Avg Recovery</p>
-          <p className="text-xl font-bold text-text-primary">{Math.round(avgScore)}</p>
-          {weekOverWeekScore !== 0 && (
-            <p className={`text-xs ${weekOverWeekScore > 0 ? 'text-success' : 'text-danger'}`}>
-              {weekOverWeekScore > 0 ? '+' : ''}{Math.round(weekOverWeekScore)} vs last week
-            </p>
-          )}
-        </div>
-        <div className="bg-background rounded-lg p-3 text-center">
-          <p className="text-xs text-text-muted mb-1">Avg Duration</p>
-          <p className="text-xl font-bold text-text-primary">{formatDuration(Math.round(avgDuration))}</p>
-        </div>
-        <div className="bg-background rounded-lg p-3 text-center">
-          <p className="text-xs text-text-muted mb-1">Avg Quality</p>
-          <p className="text-xl font-bold text-text-primary">{avgQuality.toFixed(1)}/5</p>
-        </div>
-        <div className="bg-background rounded-lg p-3 text-center">
-          <p className="text-xs text-text-muted mb-1">Avg Energy</p>
-          <p className="text-xl font-bold text-text-primary">{avgEnergy.toFixed(1)}/5</p>
-        </div>
-      </div>
-
-      {/* Best and worst nights */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-text-muted">Best night</span>
-          <span className="text-success font-medium">
-            {new Date(bestNight.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} — {bestNight.score}
+    <AnimatedInsightCard index={3}>
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Calendar className="w-5 h-5 text-success" />
+          <p className="font-semibold text-text-primary">Weekly Report</p>
+          <span className="text-xs bg-pro-accent/20 text-pro-accent px-2 py-0.5 rounded-full font-medium">
+            PRO
           </span>
         </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-text-muted">Worst night</span>
-          <span className="text-danger font-medium">
-            {new Date(worstNight.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} — {worstNight.score}
-          </span>
+
+        {/* Main stats */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="bg-background rounded-lg p-3 text-center">
+            <p className="text-xs text-text-muted mb-1">Avg Recovery</p>
+            <p className="text-xl font-bold text-text-primary">{Math.round(avgScore)}</p>
+            {weekOverWeekScore !== 0 && (
+              <p className={`text-xs ${weekOverWeekScore > 0 ? 'text-success' : 'text-danger'}`}>
+                {weekOverWeekScore > 0 ? '+' : ''}{Math.round(weekOverWeekScore)} vs last week
+              </p>
+            )}
+          </div>
+          <div className="bg-background rounded-lg p-3 text-center">
+            <p className="text-xs text-text-muted mb-1">Avg Duration</p>
+            <p className="text-xl font-bold text-text-primary">{formatDuration(Math.round(avgDuration))}</p>
+          </div>
+          <div className="bg-background rounded-lg p-3 text-center">
+            <p className="text-xs text-text-muted mb-1">Avg Quality</p>
+            <p className="text-xl font-bold text-text-primary">{avgQuality.toFixed(1)}/5</p>
+          </div>
+          <div className="bg-background rounded-lg p-3 text-center">
+            <p className="text-xs text-text-muted mb-1">Avg Energy</p>
+            <p className="text-xl font-bold text-text-primary">{avgEnergy.toFixed(1)}/5</p>
+          </div>
         </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-text-muted">Nights logged</span>
-          <span className="text-text-primary font-medium">{thisWeek.length} of 7</span>
+
+        {/* Best and worst nights */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-text-muted">Best night</span>
+            <span className="text-success font-medium">
+              {new Date(bestNight.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} — {bestNight.score}
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-text-muted">Worst night</span>
+            <span className="text-danger font-medium">
+              {new Date(worstNight.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} — {worstNight.score}
+            </span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-text-muted">Nights logged</span>
+            <span className="text-text-primary font-medium">{thisWeek.length} of 7</span>
+          </div>
         </div>
       </div>
-    </div>
+    </AnimatedInsightCard>
   );
 }
 
@@ -674,57 +703,61 @@ const goalRecommendations: Record<string, { title: string; tips: { icon: React.E
   },
 };
 
-// User Type Insights Component (Free)
+// User Type Insights Component (Free) with animation
 function UserTypeInsights({ profile }: { profile: Profile }) {
   const recommendations = userTypeRecommendations[profile.user_type] || userTypeRecommendations.general;
 
   return (
-    <div className="bg-card rounded-xl border border-border p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <User className="w-5 h-5 text-primary" />
-        <h3 className="font-semibold text-text-primary">{recommendations.title}</h3>
-      </div>
-      <div className="space-y-3">
-        {recommendations.tips.map((tip, index) => {
-          const Icon = tip.icon;
-          return (
-            <div key={index} className="flex gap-3">
-              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Icon className="w-4 h-4 text-primary" />
+    <AnimatedInsightCard index={0}>
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex items-center gap-2 mb-4">
+          <User className="w-5 h-5 text-primary" />
+          <h3 className="font-semibold text-text-primary">{recommendations.title}</h3>
+        </div>
+        <AnimatedTipsList className="space-y-3">
+          {recommendations.tips.map((tip, index) => {
+            const Icon = tip.icon;
+            return (
+              <div key={index} className="flex gap-3">
+                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-4 h-4 text-primary" />
+                </div>
+                <p className="text-sm text-text-secondary leading-relaxed">{tip.text}</p>
               </div>
-              <p className="text-sm text-text-secondary leading-relaxed">{tip.text}</p>
-            </div>
-          );
-        })}
+            );
+          })}
+        </AnimatedTipsList>
       </div>
-    </div>
+    </AnimatedInsightCard>
   );
 }
 
-// Goal-Based Insights Component (Free)
+// Goal-Based Insights Component (Free) with animation
 function GoalInsights({ profile }: { profile: Profile }) {
   const recommendations = goalRecommendations[profile.goal] || goalRecommendations.energy;
 
   return (
-    <div className="bg-card rounded-xl border border-border p-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Target className="w-5 h-5 text-success" />
-        <h3 className="font-semibold text-text-primary">{recommendations.title}</h3>
-      </div>
-      <div className="space-y-3">
-        {recommendations.tips.map((tip, index) => {
-          const Icon = tip.icon;
-          return (
-            <div key={index} className="flex gap-3">
-              <div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Icon className="w-4 h-4 text-success" />
+    <AnimatedInsightCard index={1}>
+      <div className="bg-card rounded-xl border border-border p-4">
+        <div className="flex items-center gap-2 mb-4">
+          <Target className="w-5 h-5 text-success" />
+          <h3 className="font-semibold text-text-primary">{recommendations.title}</h3>
+        </div>
+        <AnimatedTipsList className="space-y-3">
+          {recommendations.tips.map((tip, index) => {
+            const Icon = tip.icon;
+            return (
+              <div key={index} className="flex gap-3">
+                <div className="w-8 h-8 bg-success/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-4 h-4 text-success" />
+                </div>
+                <p className="text-sm text-text-secondary leading-relaxed">{tip.text}</p>
               </div>
-              <p className="text-sm text-text-secondary leading-relaxed">{tip.text}</p>
-            </div>
-          );
-        })}
+            );
+          })}
+        </AnimatedTipsList>
       </div>
-    </div>
+    </AnimatedInsightCard>
   );
 }
 
@@ -948,7 +981,7 @@ export default async function InsightsPage() {
 
             {/* Free insights */}
             {insights.map((insight, index) => (
-              <InsightCard key={index} {...insight} />
+              <InsightCard key={index} {...insight} index={index} />
             ))}
 
             {/* Pro insights and visualizations */}
@@ -1010,18 +1043,22 @@ export default async function InsightsPage() {
                 <LockedInsightCard
                   title="Sleep Debt Tracker"
                   description="See how much sleep you owe and when you'll recover."
+                  index={0}
                 />
                 <LockedInsightCard
                   title="Correlation Analysis"
                   description="Discover what factors most affect your sleep quality."
+                  index={1}
                 />
                 <LockedInsightCard
                   title="Optimal Bedtime"
                   description="Find your ideal bedtime for maximum recovery."
+                  index={2}
                 />
                 <LockedInsightCard
                   title="Weekly Report"
                   description="Detailed breakdown of your sleep patterns each week."
+                  index={3}
                 />
 
                 {/* Upgrade CTA */}
