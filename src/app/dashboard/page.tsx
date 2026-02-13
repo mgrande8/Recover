@@ -17,6 +17,7 @@ import {
   formatDate,
   getRecoveryColor,
   getRecoveryBgColor,
+  getRecoveryLevel,
   getTodayDate,
 } from '@/lib/utils';
 import type { Profile, SleepLog, ChecklistLog } from '@/types';
@@ -27,6 +28,7 @@ import { ReviewPrompt } from '@/components/ReviewPrompt';
 import { MilestoneReport } from '@/components/MilestoneReport';
 import { AnimatedRecoveryCard } from '@/components/AnimatedRecoveryCard';
 import { AnimatedStreakWidget, AnimatedWeeklyTrend, AnimatedCard, AnimatedListItem } from '@/components/AnimatedWidgets';
+import { DashboardTip } from '@/components/DashboardTip';
 
 // Recovery Score display component (now uses animated client component)
 function RecoveryScoreCard({
@@ -344,6 +346,11 @@ export default async function DashboardPage() {
               : "Let's log your first night of sleep."}
           </p>
         </div>
+
+        {/* Recovery-based daily tip */}
+        {hasLogs && latestLog && (
+          <DashboardTip level={calculateRecoveryScore(latestLog, profile).level} />
+        )}
 
         {/* Empty state */}
         {!hasLogs && (
