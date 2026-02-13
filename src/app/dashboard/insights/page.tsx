@@ -1170,14 +1170,14 @@ export default async function InsightsPage() {
                   <div className="bg-gradient-to-br from-card to-card-hover rounded-xl border border-pro-accent/30 p-6 mt-6 hover:border-pro-accent/50 transition-colors">
                     <div className="flex items-center gap-2 mb-2">
                       <Crown className="w-5 h-5 text-pro-accent" />
-                      <span className="font-semibold text-pro-accent">Unlock Pro Insights</span>
+                      <span className="font-semibold text-pro-accent">Try Pro Free for 7 Days</span>
                     </div>
                     <p className="text-text-secondary text-sm mb-4">
                       Get advanced analytics, sleep debt tracking, and personalized recommendations.
                     </p>
                     <div className="flex items-center gap-4">
-                      <span className="text-text-primary font-bold">$2.99/mo</span>
-                      <Button size="sm">Upgrade to Pro</Button>
+                      <span className="text-text-primary font-bold">Free trial, then $2.99/mo</span>
+                      <Button size="sm">Start Free Trial</Button>
                     </div>
                   </div>
                 </Link>

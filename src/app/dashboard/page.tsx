@@ -9,6 +9,7 @@ import {
   ClipboardCheck,
   Lightbulb,
   CloudSun,
+  Star,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import {
@@ -385,6 +386,28 @@ export default async function DashboardPage() {
               {/* Insights teaser */}
               <InsightsTeaser sleepLogs={sleepLogs} profile={profile} />
             </div>
+
+            {/* Free trial banner for non-Pro users */}
+            {!isPro && (
+              <AnimatedCard delay={0.3}>
+                <Link href="/dashboard/upgrade" className="block">
+                  <div className="bg-gradient-to-r from-pro-accent/15 to-primary/10 rounded-xl border border-pro-accent/25 p-4 hover:border-pro-accent/40 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-pro-accent/15 rounded-lg flex items-center justify-center">
+                          <Star className="w-5 h-5 text-pro-accent" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-text-primary">Try Pro free for 7 days</p>
+                          <p className="text-sm text-text-secondary">Advanced insights, sleep debt tracking, and more</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-pro-accent flex-shrink-0" />
+                    </div>
+                  </div>
+                </Link>
+              </AnimatedCard>
+            )}
 
             {/* Streak widget */}
             <AnimatedStreakWidget currentStreak={currentStreak} longestStreak={longestStreak} />

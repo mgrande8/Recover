@@ -167,13 +167,13 @@ export default async function SettingsPage() {
             <div className="bg-gradient-to-br from-card to-card-hover rounded-xl border border-border p-4 hover:border-pro-accent/50 transition-colors">
               <div className="flex items-center gap-2 mb-2">
                 <Star className="w-5 h-5 text-pro-accent" />
-                <span className="text-pro-accent font-semibold">Upgrade to Pro</span>
+                <span className="text-pro-accent font-semibold">Try Pro Free for 7 Days</span>
               </div>
               <p className="text-text-secondary text-sm mb-4">
                 Get advanced insights, sleep banking, and correlation analysis.
               </p>
               <div className="flex items-center justify-between">
-                <span className="text-text-primary font-bold">$2.99/mo</span>
+                <span className="text-text-primary font-bold">Free trial, then $2.99/mo</span>
                 <ChevronRight className="w-5 h-5 text-pro-accent" />
               </div>
             </div>

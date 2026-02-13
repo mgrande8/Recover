@@ -318,9 +318,13 @@ export default function UpgradePage() {
             <Star className="w-8 h-8 text-pro-accent" />
           </div>
           <h2 className="text-2xl font-bold text-text-primary mb-2">Recover Pro</h2>
-          <p className="text-text-secondary mb-6">
+          <p className="text-text-secondary mb-3">
             Take your sleep optimization to the next level
           </p>
+          <div className="inline-flex items-center gap-1.5 bg-success/15 text-success px-3 py-1.5 rounded-full text-sm font-semibold">
+            <Sparkles className="w-4 h-4" />
+            7-day free trial — try Pro risk-free
+          </div>
         </div>
 
         {/* Pricing cards */}
@@ -354,12 +358,12 @@ export default function UpgradePage() {
             }`}
           >
             <span className="absolute -top-2 right-3 bg-success text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-              SAVE 33%
+              SAVE 44%
             </span>
             <p className="text-sm text-text-secondary mb-1">Annual</p>
             <p className="text-2xl font-bold text-text-primary">{getAnnualPrice()}</p>
             <p className="text-sm text-text-muted">/year</p>
-            <p className="text-xs text-success mt-1">$3.33/mo</p>
+            <p className="text-xs text-success mt-1">$1.67/mo</p>
             {selectedPlan === 'annual' && (
               <div className="absolute top-3 right-3 w-5 h-5 bg-pro-accent rounded-full flex items-center justify-center">
                 <Check className="w-3 h-3 text-background" />
@@ -384,9 +388,7 @@ export default function UpgradePage() {
             ) : (
               <>
                 <Star className="w-5 h-5 mr-2" />
-                {selectedPlan === 'annual'
-                  ? `Get Annual Pro — ${getAnnualPrice()}/year`
-                  : `Get Monthly Pro — ${getMonthlyPrice()}/month`}
+                Start Free 7-Day Trial
               </>
             )}
           </Button>
@@ -414,7 +416,7 @@ export default function UpgradePage() {
           )}
 
           <p className="text-xs text-text-muted text-center">
-            Cancel anytime. No questions asked.
+            Free for 7 days, then {selectedPlan === 'annual' ? `${getAnnualPrice()}/year` : `${getMonthlyPrice()}/month`}. Cancel anytime.
           </p>
         </div>
 
