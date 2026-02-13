@@ -186,17 +186,17 @@ export default function UpgradePage() {
   const getMonthlyPrice = () => {
     if (isStoreKit && storeKitProducts.length > 0) {
       const monthly = storeKitProducts.find(p => p.id === APPLE_PRODUCTS.MONTHLY);
-      return monthly?.displayPrice || '$4.99';
+      return monthly?.displayPrice || '$2.99';
     }
-    return '$4.99';
+    return '$2.99';
   };
 
   const getAnnualPrice = () => {
     if (isStoreKit && storeKitProducts.length > 0) {
       const annual = storeKitProducts.find(p => p.id === APPLE_PRODUCTS.ANNUAL);
-      return annual?.displayPrice || '$39.99';
+      return annual?.displayPrice || '$19.99';
     }
-    return '$39.99';
+    return '$19.99';
   };
 
   // Loading state

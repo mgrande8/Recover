@@ -20,8 +20,8 @@ export async function sendProUpgradeEmail(email: string, plan: 'monthly' | 'annu
   const resend = getResend();
 
   const planDetails = plan === 'annual'
-    ? { price: '$39.99/year', savings: 'You\'re saving $20/year!' }
-    : { price: '$4.99/month', savings: '' };
+    ? { price: '$19.99/year', savings: 'You\'re saving $16/year!' }
+    : { price: '$2.99/month', savings: '' };
 
   await resend.emails.send({
     from: FROM_EMAIL,

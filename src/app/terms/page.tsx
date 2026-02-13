@@ -65,8 +65,8 @@ export default function TermsPage() {
               Subscription options:
             </p>
             <ul className="list-disc pl-6 text-text-secondary mb-4">
-              <li>Monthly: $4.99 USD per month</li>
-              <li>Annual: $39.99 USD per year</li>
+              <li>Monthly: $2.99 USD per month</li>
+              <li>Annual: $19.99 USD per year</li>
             </ul>
           </section>
 

@@ -21,6 +21,6 @@ export const PRO_MONTHLY_PRICE_ID = process.env.STRIPE_PRO_PRICE_ID || '';
 export const PRO_ANNUAL_PRICE_ID = process.env.STRIPE_PRO_ANNUAL_PRICE_ID || '';
 
 // Pro subscription prices
-export const PRO_MONTHLY_PRICE = 4.99;
-export const PRO_ANNUAL_PRICE = 39.99;
-export const PRO_ANNUAL_MONTHLY_EQUIVALENT = 3.33; // $39.99 / 12 months
+export const PRO_MONTHLY_PRICE = 2.99;
+export const PRO_ANNUAL_PRICE = 19.99;
+export const PRO_ANNUAL_MONTHLY_EQUIVALENT = 1.67; // $19.99 / 12 months

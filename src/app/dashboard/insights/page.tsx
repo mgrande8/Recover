@@ -1176,7 +1176,7 @@ export default async function InsightsPage() {
                       Get advanced analytics, sleep debt tracking, and personalized recommendations.
                     </p>
                     <div className="flex items-center gap-4">
-                      <span className="text-text-primary font-bold">$4.99/mo</span>
+                      <span className="text-text-primary font-bold">$2.99/mo</span>
                       <Button size="sm">Upgrade to Pro</Button>
                     </div>
                   </div>

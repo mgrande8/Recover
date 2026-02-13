@@ -173,7 +173,7 @@ export default async function SettingsPage() {
                 Get advanced insights, sleep banking, and correlation analysis.
               </p>
               <div className="flex items-center justify-between">
-                <span className="text-text-primary font-bold">$4.99/mo</span>
+                <span className="text-text-primary font-bold">$2.99/mo</span>
                 <ChevronRight className="w-5 h-5 text-pro-accent" />
               </div>
             </div>
