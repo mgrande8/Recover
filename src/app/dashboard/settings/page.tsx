@@ -69,6 +69,11 @@ export default async function SettingsPage() {
     redirect('/onboarding');
   }
 
+  // Check Pro status with expiration validation
+  const isProFlag = !!profile.is_pro && profile.is_pro !== 'false' && profile.is_pro !== 0;
+  const proNotExpired = !profile.pro_expires_at || new Date(profile.pro_expires_at) > new Date();
+  const isPro = isProFlag && proNotExpired;
+
   // Format user type for display
   const formatUserType = (type: string) => {
     return type.charAt(0).toUpperCase() + type.slice(1);
@@ -116,7 +121,7 @@ export default async function SettingsPage() {
                 )}
                 <p className="text-sm text-text-muted">{user.email}</p>
                 <p className="text-sm text-text-secondary">
-                  {profile.is_pro ? (
+                  {isPro ? (
                     <span className="flex items-center gap-1">
                       <Star className="w-3.5 h-3.5 text-pro-accent" />
                       <span className="text-pro-accent">Pro Member</span>
@@ -162,7 +167,7 @@ export default async function SettingsPage() {
         </div>
 
         {/* Upgrade to Pro / Manage Subscription */}
-        {!profile.is_pro ? (
+        {!isPro ? (
           <Link href="/dashboard/upgrade" className="block">
             <div className="bg-gradient-to-br from-card to-card-hover rounded-xl border border-border p-4 hover:border-pro-accent/50 transition-colors">
               <div className="flex items-center gap-2 mb-2">

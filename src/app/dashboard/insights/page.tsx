@@ -999,7 +999,7 @@ export default async function InsightsPage() {
   const insights = hasEnoughData ? generateInsights(sleepLogs, profile) : [];
 
   // Normalize is_pro to handle potential type coercion issues
-  const isPro = profile.is_pro === true || profile.is_pro === 'true' || (profile.is_pro as unknown) === 1;
+  const isPro = !!profile.is_pro && profile.is_pro !== 'false' && (profile.is_pro as unknown) !== 0;
 
   return (
     <div className="min-h-screen bg-background pb-24">

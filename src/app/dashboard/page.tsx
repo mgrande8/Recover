@@ -287,7 +287,7 @@ export default async function DashboardPage() {
   const userName = profile?.name || profile?.email?.split('@')[0] || 'there';
 
   // Check Pro status with expiration validation
-  const isProFlag = profile.is_pro === true || profile.is_pro === 'true' || profile.is_pro === 1;
+  const isProFlag = !!profile.is_pro && profile.is_pro !== 'false' && profile.is_pro !== 0;
   const proNotExpired = !profile.pro_expires_at || new Date(profile.pro_expires_at) > new Date();
   const isPro = isProFlag && proNotExpired;
 
