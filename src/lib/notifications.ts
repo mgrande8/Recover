@@ -151,6 +151,19 @@ export async function createProUpgradeNotification(
   );
 }
 
+// Pro expired / cancelled re-subscription notification
+export async function createProExpiredNotification(
+  userId: string
+): Promise<void> {
+  await createNotification(
+    userId,
+    'pro_expired',
+    'We miss you!',
+    'Your Pro insights are waiting. Resubscribe to unlock sleep debt tracking, correlation analysis, and personalized recommendations.',
+    { type: 'pro_expired' }
+  );
+}
+
 // Weekly summary notification
 export async function createWeeklySummaryNotification(
   userId: string,

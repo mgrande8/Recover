@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { getStripe, PRO_ANNUAL_PRICE_ID } from '@/lib/stripe';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { sendProUpgradeEmail } from '@/lib/email';
-import { createProUpgradeNotification } from '@/lib/notifications';
+import { createProUpgradeNotification, createProExpiredNotification } from '@/lib/notifications';
 import Stripe from 'stripe';
 
 export async function POST(request: Request) {
@@ -188,6 +188,12 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
           stripe_subscription_id: null,
         })
         .eq('id', profile.id);
+
+      try {
+        await createProExpiredNotification(profile.id);
+      } catch (e) {
+        console.error('Failed to send Pro expired notification:', e);
+      }
     }
     return;
   }
@@ -203,5 +209,11 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   if (error) {
     console.error('Failed to cancel subscription:', error);
     throw error;
+  }
+
+  try {
+    await createProExpiredNotification(userId);
+  } catch (e) {
+    console.error('Failed to send Pro expired notification:', e);
   }
 }

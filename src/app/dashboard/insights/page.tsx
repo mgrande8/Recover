@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import {
-  ArrowLeft,
   Clock,
   TrendingUp,
   TrendingDown,
@@ -26,7 +25,7 @@ import {
   BedDouble,
 } from 'lucide-react';
 import { Button } from '@/components/ui';
-import { calculateRecoveryScore, formatDuration } from '@/lib/utils';
+import { calculateRecoveryScore, formatDuration, checkIsPro } from '@/lib/utils';
 import type { Profile, SleepLog, ChecklistLog } from '@/types';
 import { ProInsightsClient } from './ProInsightsClient';
 import {
@@ -998,27 +997,19 @@ export default async function InsightsPage() {
   const hasEnoughData = sleepLogs && sleepLogs.length >= 3;
   const insights = hasEnoughData ? generateInsights(sleepLogs, profile) : [];
 
-  // Normalize is_pro to handle potential type coercion issues
-  const isPro = !!profile.is_pro && profile.is_pro !== 'false' && (profile.is_pro as unknown) !== 0;
+  // Check Pro status with expiration validation
+  const isPro = checkIsPro(profile);
 
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <header className="bg-card border-b border-border sticky top-0 z-10 pt-safe">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <Link
-              href="/dashboard"
-              className="text-text-secondary hover:text-text-primary transition-colors mr-4"
-            >
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
-            <div>
-              <h1 className="text-lg font-semibold text-text-primary">Insights</h1>
-              <p className="text-sm text-text-secondary">
-                {isPro ? 'Pro Analytics' : hasEnoughData ? 'Based on your sleep data' : 'Need more data'}
-              </p>
-            </div>
+          <div>
+            <h1 className="text-lg font-semibold text-text-primary">Insights</h1>
+            <p className="text-sm text-text-secondary">
+              {isPro ? 'Pro Analytics' : hasEnoughData ? 'Based on your sleep data' : 'Need more data'}
+            </p>
           </div>
           {isPro && (
             <div className="flex items-center gap-1 bg-pro-accent/10 px-2 py-1 rounded-full">

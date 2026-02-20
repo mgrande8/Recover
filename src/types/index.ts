@@ -35,7 +35,7 @@ export interface Profile {
 }
 
 // Notification types
-export type NotificationType = 'streak' | 'achievement' | 'reminder' | 'weekly_summary' | 'pro_upgrade' | 'system';
+export type NotificationType = 'streak' | 'achievement' | 'reminder' | 'weekly_summary' | 'pro_upgrade' | 'pro_expired' | 'system';
 
 export interface Notification {
   id: string;

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { sendProUpgradeEmail } from '@/lib/email';
-import { createProUpgradeNotification } from '@/lib/notifications';
+import { createProUpgradeNotification, createProExpiredNotification } from '@/lib/notifications';
 import {
   decodeServerNotification,
   decodeSignedTransaction,
@@ -139,6 +139,12 @@ async function handleNotification(
         })
         .eq('id', profile.id);
 
+      try {
+        await createProExpiredNotification(profile.id);
+      } catch (e) {
+        console.error('Failed to send Pro expired notification:', e);
+      }
+
       console.log('Subscription expired for user:', profile.id);
       break;
     }
@@ -163,6 +169,12 @@ async function handleNotification(
           is_pro: false,
         })
         .eq('id', profile.id);
+
+      try {
+        await createProExpiredNotification(profile.id);
+      } catch (e) {
+        console.error('Failed to send Pro expired notification:', e);
+      }
 
       console.log('Grace period expired for user:', profile.id);
       break;
@@ -202,6 +214,12 @@ async function handleNotification(
         })
         .eq('id', profile.id);
 
+      try {
+        await createProExpiredNotification(profile.id);
+      } catch (e) {
+        console.error('Failed to send Pro expired notification:', e);
+      }
+
       console.log('Refund processed for user:', profile.id);
       break;
     }
@@ -216,6 +234,12 @@ async function handleNotification(
           apple_product_id: null,
         })
         .eq('id', profile.id);
+
+      try {
+        await createProExpiredNotification(profile.id);
+      } catch (e) {
+        console.error('Failed to send Pro expired notification:', e);
+      }
 
       console.log('Subscription revoked for user:', profile.id);
       break;

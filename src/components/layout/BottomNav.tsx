@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Moon, History, User } from 'lucide-react';
+import { Moon, History, Lightbulb, User } from 'lucide-react';
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -15,6 +15,7 @@ export function BottomNav() {
   const tabs = [
     { href: '/dashboard', icon: Moon, label: 'Today' },
     { href: '/dashboard/history', icon: History, label: 'History' },
+    { href: '/dashboard/insights', icon: Lightbulb, label: 'Insights' },
     { href: '/dashboard/settings', icon: User, label: 'Profile' },
   ];
 

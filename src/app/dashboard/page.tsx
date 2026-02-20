@@ -20,6 +20,7 @@ import {
   getRecoveryBgColor,
   getRecoveryLevel,
   getTodayDate,
+  checkIsPro,
 } from '@/lib/utils';
 import type { Profile, SleepLog, ChecklistLog } from '@/types';
 import { DashboardProCharts } from '@/components/DashboardProCharts';
@@ -287,9 +288,7 @@ export default async function DashboardPage() {
   const userName = profile?.name || profile?.email?.split('@')[0] || 'there';
 
   // Check Pro status with expiration validation
-  const isProFlag = !!profile.is_pro && profile.is_pro !== 'false' && profile.is_pro !== 0;
-  const proNotExpired = !profile.pro_expires_at || new Date(profile.pro_expires_at) > new Date();
-  const isPro = isProFlag && proNotExpired;
+  const isPro = checkIsPro(profile);
 
   return (
     <div className="min-h-screen bg-background pb-24">
