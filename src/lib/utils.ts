@@ -165,12 +165,10 @@ export function getYesterdayDate(): string {
 
 /**
  * Check if a user profile has active Pro status
- * Validates both the is_pro flag and expiration date
+ * Trusts the is_pro flag set by Stripe/Apple webhooks as the source of truth
  */
-export function checkIsPro(profile: { is_pro?: unknown; pro_expires_at?: string | null }): boolean {
-  const isProFlag = !!profile.is_pro && profile.is_pro !== 'false' && (profile.is_pro as unknown) !== 0;
-  const proNotExpired = !profile.pro_expires_at || new Date(profile.pro_expires_at) > new Date();
-  return isProFlag && proNotExpired;
+export function checkIsPro(profile: { is_pro?: unknown }): boolean {
+  return !!profile.is_pro && profile.is_pro !== 'false' && (profile.is_pro as unknown) !== 0;
 }
 
 /**
