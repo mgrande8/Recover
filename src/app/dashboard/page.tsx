@@ -7,7 +7,6 @@ import {
   Plus,
   ChevronRight,
   ClipboardCheck,
-  Lightbulb,
   CloudSun,
   Star,
 } from 'lucide-react';
@@ -118,65 +117,6 @@ function ChecklistWidget({ checklist }: { checklist: ChecklistLog | null }) {
               style={{ width: `${percentage}%` }}
             />
           </div>
-        </div>
-      </Link>
-    </AnimatedCard>
-  );
-}
-
-// Insights teaser component with animation
-function InsightsTeaser({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: Profile }) {
-  if (sleepLogs.length < 3) {
-    return (
-      <AnimatedCard delay={0.25}>
-        <div className="bg-card rounded-xl border border-border p-4">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
-              <Lightbulb className="w-5 h-5 text-warning" />
-            </div>
-            <div>
-              <p className="font-medium text-text-primary">Insights</p>
-              <p className="text-sm text-text-secondary">Log 3+ nights to unlock</p>
-            </div>
-          </div>
-          <div className="flex gap-1 mt-3">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className={`h-1.5 flex-1 rounded-full ${
-                  sleepLogs.length >= i ? 'bg-warning' : 'bg-background'
-                }`}
-              />
-            ))}
-          </div>
-        </div>
-      </AnimatedCard>
-    );
-  }
-
-  // Calculate a simple insight
-  const avgQuality = sleepLogs.reduce((acc, log) => acc + log.quality, 0) / sleepLogs.length;
-  const qualityTrend = avgQuality >= 3.5 ? 'improving' : 'needs attention';
-
-  return (
-    <AnimatedCard delay={0.25}>
-      <Link href="/dashboard/insights" className="block">
-        <div className="bg-card rounded-xl border border-border p-4 hover:bg-card-hover transition-colors">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
-                <Lightbulb className="w-5 h-5 text-warning" />
-              </div>
-              <div>
-                <p className="font-medium text-text-primary">Insights</p>
-                <p className="text-sm text-text-secondary">3 insights available</p>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-text-muted" />
-          </div>
-          <p className="text-sm text-text-secondary mt-2">
-            Your sleep quality is {qualityTrend}. Tap to see more insights.
-          </p>
         </div>
       </Link>
     </AnimatedCard>
@@ -377,14 +317,8 @@ export default async function DashboardPage() {
             {/* Recovery Score */}
             <RecoveryScoreCard sleepLog={latestLog} profile={profile} />
 
-            {/* Quick actions row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Checklist widget */}
-              <ChecklistWidget checklist={checklist} />
-
-              {/* Insights teaser */}
-              <InsightsTeaser sleepLogs={sleepLogs} profile={profile} />
-            </div>
+            {/* Checklist widget */}
+            <ChecklistWidget checklist={checklist} />
 
             {/* Free trial banner for non-Pro users */}
             {!isPro && (
