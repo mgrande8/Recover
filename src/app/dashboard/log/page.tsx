@@ -15,7 +15,18 @@ import {
   ChevronRight,
   CloudSun,
   Lightbulb,
+  Plane,
+  Frown,
+  Thermometer,
+  BedDouble,
+  Wine,
+  Dumbbell,
+  Pill,
+  Coffee,
+  Smartphone,
+  Tag,
 } from 'lucide-react';
+import type { SleepTag } from '@/types';
 import { Button, useToast } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
 import { getYesterdayDate, getTodayDate, formatDate } from '@/lib/utils';
@@ -105,6 +116,19 @@ function InterruptionsSelector({
   );
 }
 
+const tagOptions: { tag: SleepTag; label: string; icon: React.ElementType; color: string }[] = [
+  { tag: 'travel', label: 'Travel', icon: Plane, color: 'text-primary' },
+  { tag: 'stress', label: 'Stress', icon: Frown, color: 'text-danger' },
+  { tag: 'sick', label: 'Sick', icon: Thermometer, color: 'text-warning' },
+  { tag: 'new_mattress', label: 'New Bed', icon: BedDouble, color: 'text-success' },
+  { tag: 'alcohol', label: 'Alcohol', icon: Wine, color: 'text-danger' },
+  { tag: 'exercise', label: 'Exercise', icon: Dumbbell, color: 'text-success' },
+  { tag: 'medication', label: 'Meds', icon: Pill, color: 'text-warning' },
+  { tag: 'caffeine', label: 'Caffeine', icon: Coffee, color: 'text-warning' },
+  { tag: 'screen_time', label: 'Screens', icon: Smartphone, color: 'text-danger' },
+  { tag: 'custom', label: 'Other', icon: Tag, color: 'text-text-muted' },
+];
+
 export default function SleepLogPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -131,6 +155,8 @@ export default function SleepLogPage() {
   const [interruptions, setInterruptions] = useState(0);
   const [notes, setNotes] = useState('');
   const [isNap, setIsNap] = useState(initialIsNap);
+  const [selectedTags, setSelectedTags] = useState<SleepTag[]>([]);
+  const [customLabel, setCustomLabel] = useState('');
 
   // Load existing log data when date changes (only for night sleep, not naps)
   useEffect(() => {
@@ -173,6 +199,21 @@ export default function SleepLogPage() {
           setInterruptions(data.interruptions);
           setNotes(data.notes || '');
           setIsNap(false);
+
+          // Load existing tags
+          const { data: tagsData } = await supabase
+            .from('sleep_log_tags')
+            .select('tag, custom_label')
+            .eq('sleep_log_id', data.id);
+
+          if (tagsData && tagsData.length > 0) {
+            setSelectedTags(tagsData.map((t: { tag: SleepTag; custom_label: string | null }) => t.tag));
+            const customTag = tagsData.find((t: { tag: SleepTag; custom_label: string | null }) => t.tag === 'custom');
+            if (customTag?.custom_label) setCustomLabel(customTag.custom_label);
+          } else {
+            setSelectedTags([]);
+            setCustomLabel('');
+          }
         } else {
           setExistingLog(false);
           // Reset to defaults for new log
@@ -183,6 +224,8 @@ export default function SleepLogPage() {
           setInterruptions(0);
           setNotes('');
           setIsNap(false);
+          setSelectedTags([]);
+          setCustomLabel('');
         }
       }
       setIsLoadingData(false);
@@ -322,6 +365,37 @@ export default function SleepLogPage() {
         console.error('Upsert error:', upsertError);
         setError('Failed to save sleep log. Please try again.');
         return;
+      }
+
+      // Save/clear tags
+      {
+        const { data: savedLog } = await supabase
+          .from('sleep_logs')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('date', date)
+          .eq('is_nap', false)
+          .single();
+
+        if (savedLog) {
+          // Delete existing tags
+          await supabase
+            .from('sleep_log_tags')
+            .delete()
+            .eq('sleep_log_id', savedLog.id);
+
+          // Insert new tags if any selected
+          if (selectedTags.length > 0) {
+            const tagRows = selectedTags.map((tag) => ({
+              sleep_log_id: savedLog.id,
+              user_id: user.id,
+              tag,
+              custom_label: tag === 'custom' ? customLabel || null : null,
+            }));
+
+            await supabase.from('sleep_log_tags').insert(tagRows);
+          }
+        }
       }
 
       // Check for streak milestone (only for new logs, not updates)
@@ -550,6 +624,47 @@ export default function SleepLogPage() {
               {/* Interruptions */}
               <div className="bg-card rounded-xl border border-border p-4">
                 <InterruptionsSelector value={interruptions} onChange={setInterruptions} />
+              </div>
+
+              {/* Sleep Tags */}
+              <div className="bg-card rounded-xl border border-border p-4">
+                <label className="block text-sm font-medium text-text-primary mb-2">
+                  What changed? (optional)
+                </label>
+                <p className="text-xs text-text-muted mb-3">Tag anything that may have affected your sleep</p>
+                <div className="flex flex-wrap gap-2">
+                  {tagOptions.map(({ tag, label, icon: TagIcon, color }) => {
+                    const isSelected = selectedTags.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => {
+                          setSelectedTags((prev) =>
+                            isSelected ? prev.filter((t) => t !== tag) : [...prev, tag]
+                          );
+                        }}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm transition-all ${
+                          isSelected
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-border bg-background text-text-secondary hover:bg-card-hover'
+                        }`}
+                      >
+                        <TagIcon className={`w-3.5 h-3.5 ${isSelected ? 'text-primary' : color}`} />
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedTags.includes('custom') && (
+                  <input
+                    type="text"
+                    value={customLabel}
+                    onChange={(e) => setCustomLabel(e.target.value)}
+                    placeholder="Describe what changed..."
+                    className="w-full mt-3 bg-background border border-border rounded-lg py-2 px-3 text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                  />
+                )}
               </div>
 
               {/* Notes */}

@@ -6,7 +6,13 @@ import {
   calculateWeeklyStats,
   createReminderNotification,
   createWeeklySummaryNotification,
+  createMonthlyReportNotification,
+  createSmartBedtimeNotification,
 } from '@/lib/notifications';
+import { getUsersForMonthlyReport, createMonthlyReport } from '@/lib/reports/monthly';
+import { getUsersForSmartReminder } from '@/lib/sleep-analysis';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import type { SleepLog, ChecklistLog, MonthlyReport, SleepLogTag } from '@/types';
 
 // Verify the request is from a trusted source (Vercel Cron or similar)
 function verifyRequest(headersList: Headers): boolean {
@@ -80,12 +86,123 @@ async function handleDailyReminders(): Promise<NextResponse> {
   }
 
   console.log(`[Cron] Daily reminders complete: ${sent} sent, ${failed} failed, ${users.length} total`);
+
+  // Piggyback monthly report generation on daily cron
+  const monthlyResults = await handleMonthlyReports();
+
+  // Piggyback smart bedtime reminders on daily cron
+  const smartBedtimeResults = await handleSmartBedtimeReminders();
+
   return NextResponse.json({
     type: 'daily',
     sent,
     failed,
     total: users.length,
+    monthly: monthlyResults,
+    smartBedtime: smartBedtimeResults,
   });
+}
+
+async function handleMonthlyReports(): Promise<{ generated: number; failed: number }> {
+  let generated = 0;
+  let failed = 0;
+
+  try {
+    const users = await getUsersForMonthlyReport();
+    console.log(`[Cron] Found ${users.length} users for monthly reports`);
+
+    const supabase = getSupabaseAdmin();
+
+    for (const { id: userId, profile } of users) {
+      try {
+        const periodEnd = new Date();
+        const periodStart = new Date();
+        periodStart.setDate(periodStart.getDate() - 30);
+        const periodStartStr = periodStart.toISOString().split('T')[0];
+        const periodEndStr = periodEnd.toISOString().split('T')[0];
+
+        // Fetch sleep logs for the period
+        const { data: sleepLogs } = await supabase
+          .from('sleep_logs')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('date', periodStartStr)
+          .lte('date', periodEndStr)
+          .order('date', { ascending: false });
+
+        if (!sleepLogs || sleepLogs.length < 20) continue;
+
+        // Fetch checklist logs
+        const { data: checklistLogs } = await supabase
+          .from('checklist_logs')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('date', periodStartStr)
+          .lte('date', periodEndStr);
+
+        // Fetch tags
+        const logIds = sleepLogs.map((l: SleepLog) => l.id);
+        const { data: tags } = await supabase
+          .from('sleep_log_tags')
+          .select('*')
+          .in('sleep_log_id', logIds);
+
+        // Get previous report for comparison
+        const { data: previousReport } = await supabase
+          .from('monthly_reports')
+          .select('*')
+          .eq('user_id', userId)
+          .order('period_start', { ascending: false })
+          .limit(1)
+          .single();
+
+        const reportId = await createMonthlyReport(
+          userId,
+          periodStartStr,
+          periodEndStr,
+          sleepLogs as SleepLog[],
+          (checklistLogs || []) as ChecklistLog[],
+          profile,
+          previousReport as MonthlyReport | null,
+          (tags || []) as SleepLogTag[]
+        );
+
+        await createMonthlyReportNotification(userId, reportId);
+        generated++;
+      } catch (error) {
+        console.error(`[Cron] Failed to generate monthly report for ${userId}:`, error);
+        failed++;
+      }
+    }
+  } catch (error) {
+    console.error('[Cron] Monthly report generation failed:', error);
+  }
+
+  return { generated, failed };
+}
+
+async function handleSmartBedtimeReminders(): Promise<{ sent: number; failed: number }> {
+  let sent = 0;
+  let failed = 0;
+
+  try {
+    const users = await getUsersForSmartReminder();
+    console.log(`[Cron] Found ${users.length} users for smart bedtime reminders`);
+
+    for (const userId of users) {
+      try {
+        await createSmartBedtimeNotification(userId);
+        sent++;
+      } catch (error) {
+        console.error(`[Cron] Failed to send smart bedtime reminder to ${userId}:`, error);
+        failed++;
+      }
+    }
+  } catch (error) {
+    console.error('[Cron] Smart bedtime reminders failed:', error);
+  }
+
+  return { sent, failed };
 }
 
 async function handleWeeklySummary(): Promise<NextResponse> {

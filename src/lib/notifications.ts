@@ -186,6 +186,33 @@ export async function createWeeklySummaryNotification(
   );
 }
 
+// Monthly report notification
+export async function createMonthlyReportNotification(
+  userId: string,
+  reportId: string
+): Promise<void> {
+  await createNotification(
+    userId,
+    'monthly_report',
+    'Your 30-Day Sleep Report is Ready',
+    'Tap to see your personalized sleep analysis and recommendations.',
+    { reportId, type: 'monthly_report' }
+  );
+}
+
+// Smart bedtime reminder notification
+export async function createSmartBedtimeNotification(
+  userId: string
+): Promise<void> {
+  await createNotification(
+    userId,
+    'reminder',
+    'Wind-Down Time',
+    'Your optimal bedtime is in 30 minutes. Start your wind-down routine.',
+    { type: 'smart_bedtime' }
+  );
+}
+
 // Helper to get current hour in a timezone
 function getCurrentHourInTimezone(timezone: string): number {
   try {

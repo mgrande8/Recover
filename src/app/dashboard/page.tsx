@@ -30,6 +30,9 @@ import { MilestoneReport } from '@/components/MilestoneReport';
 import { AnimatedRecoveryCard } from '@/components/AnimatedRecoveryCard';
 import { AnimatedStreakWidget, AnimatedWeeklyTrend, AnimatedCard, AnimatedListItem } from '@/components/AnimatedWidgets';
 import { DashboardTip } from '@/components/DashboardTip';
+import { SleepGoalRefinement } from '@/components/SleepGoalRefinement';
+import { calculateChecklistStreak } from '@/lib/checklist-streaks';
+import { Flame } from 'lucide-react';
 
 // Recovery Score display component (now uses animated client component)
 function RecoveryScoreCard({
@@ -73,7 +76,7 @@ function WeeklyTrend({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: P
 }
 
 // Checklist widget component with animation
-function ChecklistWidget({ checklist }: { checklist: ChecklistLog | null }) {
+function ChecklistWidget({ checklist, checklistStreak }: { checklist: ChecklistLog | null; checklistStreak: number }) {
   const checklistItems = [
     'exercised',
     'no_caffeine_after_2pm',
@@ -101,7 +104,15 @@ function ChecklistWidget({ checklist }: { checklist: ChecklistLog | null }) {
                 <ClipboardCheck className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="font-medium text-text-primary">Pre-Sleep Checklist</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-text-primary">Pre-Sleep Checklist</p>
+                  {checklistStreak > 0 && (
+                    <span className="inline-flex items-center gap-1 text-xs text-orange-500 font-medium bg-orange-500/10 px-1.5 py-0.5 rounded-full">
+                      <Flame className="w-3 h-3" />
+                      {checklistStreak}
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-text-secondary">
                   {checkedCount === 0 ? 'Not started' : `${checkedCount}/${totalItems} completed`}
                 </p>
@@ -212,6 +223,18 @@ export default async function DashboardPage() {
     .eq('date', today)
     .single();
 
+  // Get checklist logs for streak calculation (last 90 days)
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  const { data: checklistLogs } = await supabase
+    .from('checklist_logs')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('date', ninetyDaysAgo.toISOString().split('T')[0])
+    .order('date', { ascending: false });
+
+  const checklistStreakData = calculateChecklistStreak((checklistLogs || []) as ChecklistLog[]);
+
   // Get user streak
   const { data: streakData } = await supabase
     .from('user_streaks')
@@ -241,6 +264,14 @@ export default async function DashboardPage() {
           sleepLogs={sleepLogs || []}
           profile={profile}
           totalDaysTracked={totalDaysTracked}
+        />
+      )}
+
+      {/* Sleep goal refinement - shows at 7+ logs if avg differs from goal */}
+      {hasLogs && (
+        <SleepGoalRefinement
+          sleepLogs={sleepLogs || []}
+          profile={profile}
         />
       )}
 
@@ -318,7 +349,7 @@ export default async function DashboardPage() {
             <RecoveryScoreCard sleepLog={latestLog} profile={profile} />
 
             {/* Checklist widget */}
-            <ChecklistWidget checklist={checklist} />
+            <ChecklistWidget checklist={checklist} checklistStreak={checklistStreakData.currentStreak} />
 
             {/* Free trial banner for non-Pro users */}
             {!isPro && (

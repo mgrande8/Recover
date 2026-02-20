@@ -19,6 +19,7 @@ import {
 import { Button, useToast } from '@/components/ui';
 import { createClient } from '@/lib/supabase/client';
 import { getTodayDate } from '@/lib/utils';
+import { ChecklistStreakWidget } from '@/components/ChecklistStreakWidget';
 
 // Checklist item type
 interface ChecklistItem {
@@ -203,6 +204,9 @@ export default function ChecklistPage() {
 
       {/* Main content */}
       <main className="max-w-lg mx-auto px-4 py-6">
+        {/* Streak widget */}
+        <ChecklistStreakWidget />
+
         {/* Progress card */}
         <div className="bg-card rounded-xl border border-border p-4 mb-6">
           <div className="flex items-center justify-between mb-3">

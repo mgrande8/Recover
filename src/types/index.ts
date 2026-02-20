@@ -34,8 +34,58 @@ export interface Profile {
   updated_at: string;
 }
 
+// Sleep tag types
+export type SleepTag = 'travel' | 'stress' | 'sick' | 'new_mattress' | 'alcohol' | 'exercise' | 'medication' | 'caffeine' | 'screen_time' | 'custom';
+
+export interface SleepLogTag {
+  id: string;
+  sleep_log_id: string;
+  user_id: string;
+  tag: SleepTag;
+  custom_label: string | null;
+  created_at: string;
+}
+
+// Monthly report types
+export interface MonthlyReportStats {
+  avgDuration: number;
+  avgQuality: number;
+  avgEnergy: number;
+  avgRecoveryScore: number;
+  sleepDebtHours: number;
+  bestDay: { date: string; score: number };
+  worstDay: { date: string; score: number };
+  consistencyScore: number;
+  bedtimeDriftMinutes: number;
+  nightsLogged: number;
+  totalPeriodDays: number;
+  checklistCorrelations: { item: string; label: string; impact: number }[];
+  dayOfWeekScores: Record<string, number>;
+  tagFrequency: Record<string, { count: number; avgScoreImpact: number }>;
+  recommendations: { category: string; title: string; detail: string; priority: 'high' | 'medium' | 'low' }[];
+}
+
+export interface MonthlyReportComparison {
+  prevAvgScore: number;
+  scoreDelta: number;
+  prevAvgDuration: number;
+  durationDelta: number;
+  prevConsistency: number;
+  consistencyDelta: number;
+}
+
+export interface MonthlyReport {
+  id: string;
+  user_id: string;
+  period_start: string;
+  period_end: string;
+  stats: MonthlyReportStats;
+  comparison: MonthlyReportComparison | null;
+  created_at: string;
+}
+
 // Notification types
-export type NotificationType = 'streak' | 'achievement' | 'reminder' | 'weekly_summary' | 'pro_upgrade' | 'pro_expired' | 'system';
+export type NotificationType = 'streak' | 'achievement' | 'reminder' | 'weekly_summary' | 'pro_upgrade' | 'pro_expired' | 'monthly_report' | 'system';
 
 export interface Notification {
   id: string;

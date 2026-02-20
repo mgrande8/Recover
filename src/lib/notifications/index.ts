@@ -1,7 +1,7 @@
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { sendPushNotification } from '@/lib/push';
 
-export type NotificationType = 'streak' | 'achievement' | 'reminder' | 'weekly_summary' | 'pro_upgrade' | 'pro_expired' | 'system';
+export type NotificationType = 'streak' | 'achievement' | 'reminder' | 'weekly_summary' | 'pro_upgrade' | 'pro_expired' | 'monthly_report' | 'system';
 
 export interface Notification {
   id: string;

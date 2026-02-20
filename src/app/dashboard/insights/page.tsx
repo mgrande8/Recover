@@ -26,7 +26,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { calculateRecoveryScore, formatDuration, checkIsPro } from '@/lib/utils';
-import type { Profile, SleepLog, ChecklistLog } from '@/types';
+import { calculateOptimalBedtime } from '@/lib/sleep-analysis';
+import type { Profile, SleepLog, ChecklistLog, MonthlyReport } from '@/types';
 import { ProInsightsClient } from './ProInsightsClient';
 import {
   AnimatedInsightCard,
@@ -315,7 +316,6 @@ function CorrelationAnalysis({ sleepLogs, checklistLogs, profile }: { sleepLogs:
 // Optimal Bedtime Calculator (Pro Feature) with animation
 function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: Profile }) {
   const requiredLogs = 7;
-  // Filter out naps for this calculation
   const nightSleepLogs = sleepLogs.filter((log) => !log.is_nap);
   const currentCount = nightSleepLogs.length;
   const progress = Math.min(currentCount / requiredLogs, 1);
@@ -354,37 +354,10 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
     );
   }
 
-  // Get user's typical bedtime as reference (parse HH:MM format)
-  const [typicalHour, typicalMin] = (profile.typical_bedtime || '22:30').split(':').map(Number);
-  let typicalBedtimeHour = typicalHour + (typicalMin || 0) / 60;
-  // Normalize typical bedtime to evening scale (if before 12, assume after midnight)
-  if (typicalBedtimeHour < 12) typicalBedtimeHour += 24;
+  // Use the extracted calculation function
+  const optimalResult = calculateOptimalBedtime(sleepLogs, profile);
 
-  // Find bedtimes that resulted in best quality sleep
-  // Exclude naps - they shouldn't affect optimal bedtime calculation
-  // Filter to only include reasonable bedtimes (6 PM to 3 AM, normalized as 18-27)
-  const bedtimeQuality = sleepLogs
-    .filter((log) => !log.is_nap) // Exclude naps from bedtime analysis
-    .map((log) => {
-      const bedtime = new Date(log.bedtime);
-      let hour = bedtime.getHours() + bedtime.getMinutes() / 60;
-      // Normalize: hours 0-5 (midnight to 5 AM) become 24-29
-      if (hour < 6) hour += 24;
-
-      return {
-        hour,
-        quality: log.quality,
-        energy: log.energy,
-        score: calculateRecoveryScore(log, profile).score,
-      };
-    })
-    // Filter out unreasonable bedtimes (before 5 PM or after 5 AM)
-    // Reasonable range: 17 (5 PM) to 29 (5 AM)
-    .filter((bq) => bq.hour >= 17 && bq.hour <= 29);
-
-  if (bedtimeQuality.length < 3) {
-    // Not enough reasonable bedtime data
-    const needed = 3 - bedtimeQuality.length;
+  if (!optimalResult) {
     return (
       <AnimatedInsightCard index={2}>
         <div className="bg-card rounded-xl border border-border p-4">
@@ -400,7 +373,7 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
                 </span>
               </div>
               <p className="text-sm text-text-primary font-medium mb-1">
-                🎯 {needed} more regular {needed === 1 ? 'night' : 'nights'} needed
+                🎯 More regular nights needed
               </p>
               <p className="text-xs text-text-muted">Log sleep with bedtimes between 5 PM - 5 AM for best results.</p>
             </div>
@@ -410,78 +383,19 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
     );
   }
 
-  // Group bedtimes into 30-min windows and find the best
-  const windows: Record<string, { total: number; count: number; avgScore: number }> = {};
-
-  bedtimeQuality.forEach((bq) => {
-    const windowStart = Math.floor(bq.hour * 2) / 2; // Round to nearest 30 min
-    const key = windowStart.toString();
-
-    if (!windows[key]) {
-      windows[key] = { total: 0, count: 0, avgScore: 0 };
-    }
-    windows[key].total += bq.score;
-    windows[key].count += 1;
-  });
-
-  // Calculate averages
-  Object.keys(windows).forEach((key) => {
-    windows[key].avgScore = windows[key].total / windows[key].count;
-  });
-
-  // Calculate overall average score to use as baseline
-  const allScores = bedtimeQuality.map((bq) => bq.score);
-  const avgOverallScore = allScores.reduce((a, b) => a + b, 0) / allScores.length;
-
-  // Find best window, strongly preferring times close to typical bedtime
-  // Only recommend a different time if it has significantly better scores
-  let bestWindow = { hour: typicalBedtimeHour, avgScore: avgOverallScore };
-
-  // First, look for windows within 2 hours of typical bedtime
-  const nearbyWindows: { hour: number; avgScore: number; count: number }[] = [];
-  Object.entries(windows).forEach(([key, data]) => {
-    const windowHour = parseFloat(key);
-    const distance = Math.abs(windowHour - typicalBedtimeHour);
-
-    // Only consider windows within 2 hours of typical bedtime
-    if (distance <= 2 && data.count >= 1) {
-      nearbyWindows.push({ hour: windowHour, avgScore: data.avgScore, count: data.count });
-    }
-  });
-
-  // If we have nearby windows, find the best one
-  if (nearbyWindows.length > 0) {
-    // Sort by score (highest first), then by proximity to typical bedtime
-    nearbyWindows.sort((a, b) => {
-      const scoreDiff = b.avgScore - a.avgScore;
-      if (Math.abs(scoreDiff) > 3) return scoreDiff; // Prefer higher score if difference > 3
-      // If scores are similar, prefer closer to typical bedtime
-      return Math.abs(a.hour - typicalBedtimeHour) - Math.abs(b.hour - typicalBedtimeHour);
-    });
-    bestWindow = { hour: nearbyWindows[0].hour, avgScore: nearbyWindows[0].avgScore };
-  } else {
-    // No nearby data - just use typical bedtime
-    bestWindow = { hour: typicalBedtimeHour, avgScore: avgOverallScore };
-  }
-
-  // Format time - handle the 24+ hour normalization
-  let displayHour = bestWindow.hour;
-  if (displayHour >= 24) displayHour -= 24;
-
-  const hours = Math.floor(displayHour);
-  const minutes = Math.round((displayHour % 1) * 60);
-  const meridian = hours >= 12 ? 'PM' : 'AM';
-  const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-  const formattedTime = `${displayHours}:${minutes.toString().padStart(2, '0')} ${meridian}`;
+  // Format time
+  const meridian = optimalResult.hour >= 12 ? 'PM' : 'AM';
+  const displayHours = optimalResult.hour > 12 ? optimalResult.hour - 12 : optimalResult.hour === 0 ? 12 : optimalResult.hour;
+  const formattedTime = `${displayHours}:${optimalResult.minute.toString().padStart(2, '0')} ${meridian}`;
 
   // Calculate ideal wake time
-  let idealWakeHour = displayHour + profile.sleep_goal_hours;
+  let idealWakeHour = optimalResult.hour + profile.sleep_goal_hours;
   if (idealWakeHour >= 24) idealWakeHour -= 24;
 
   const wakeHours = Math.floor(idealWakeHour);
   const wakeMeridian = wakeHours >= 12 ? 'PM' : 'AM';
   const displayWakeHours = wakeHours > 12 ? wakeHours - 12 : wakeHours === 0 ? 12 : wakeHours;
-  const formattedWakeTime = `${displayWakeHours}:${minutes.toString().padStart(2, '0')} ${wakeMeridian}`;
+  const formattedWakeTime = `${displayWakeHours}:${optimalResult.minute.toString().padStart(2, '0')} ${wakeMeridian}`;
 
   return (
     <AnimatedInsightCard index={2}>
@@ -499,7 +413,7 @@ function OptimalBedtime({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile
             </div>
             <p className="text-2xl font-bold text-warning mb-1">{formattedTime}</p>
             <p className="text-sm text-text-secondary">
-              Based on your sleep patterns near your typical bedtime, {formattedTime} gives you optimal recovery (avg score: {Math.round(bestWindow.avgScore)}).
+              Based on your sleep patterns near your typical bedtime, {formattedTime} gives you optimal recovery (avg score: {optimalResult.score}).
             </p>
             <div className="flex items-center gap-2 mt-2 text-xs text-text-muted">
               <Sun className="w-3.5 h-3.5" />
@@ -994,6 +908,15 @@ export default async function InsightsPage() {
     .order('date', { ascending: false })
     .limit(30);
 
+  // Get latest monthly report
+  const { data: latestReport } = await supabase
+    .from('monthly_reports')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('period_start', { ascending: false })
+    .limit(1)
+    .single();
+
   const hasEnoughData = sleepLogs && sleepLogs.length >= 3;
   const insights = hasEnoughData ? generateInsights(sleepLogs, profile) : [];
 
@@ -1080,6 +1003,31 @@ export default async function InsightsPage() {
             ))}
 
             {/* Pro insights and visualizations */}
+            {/* Monthly Report Card */}
+            {latestReport && (
+              <AnimatedInsightCard index={insights.length}>
+                <Link href={`/dashboard/insights/report/${latestReport.id}`} className="block">
+                  <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-xl border border-primary/20 p-4 hover:border-primary/40 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary/15 rounded-lg flex items-center justify-center">
+                          <BarChart3 className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-text-primary">30-Day Report</p>
+                          <p className="text-xs text-text-secondary">
+                            {new Date(latestReport.period_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} — {new Date(latestReport.period_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            {' · '}Avg score: {(latestReport as MonthlyReport).stats.avgRecoveryScore}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-primary text-sm font-medium">View →</span>
+                    </div>
+                  </div>
+                </Link>
+              </AnimatedInsightCard>
+            )}
+
             {isPro ? (
               <>
                 {/* Pro Features Header */}

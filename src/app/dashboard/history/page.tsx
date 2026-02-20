@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { Moon, History, User, Clock, Star, Zap, AlertCircle, FileText, Pencil, CloudSun, Plus, Trash2 } from 'lucide-react';
+import { Moon, History, User, Clock, Star, Zap, AlertCircle, FileText, Pencil, CloudSun, Plus, Trash2, Plane, Frown, Thermometer, BedDouble, Wine, Dumbbell, Pill, Coffee, Smartphone, Tag } from 'lucide-react';
 import { DeleteSleepLog } from '@/components/DeleteSleepLog';
 import { Button } from '@/components/ui';
 import {
@@ -10,7 +10,20 @@ import {
   formatDate,
   getRecoveryColor,
 } from '@/lib/utils';
-import type { Profile, SleepLog } from '@/types';
+import type { Profile, SleepLog, SleepLogTag, SleepTag } from '@/types';
+
+const tagConfig: Record<SleepTag, { label: string; icon: React.ElementType; color: string; bg: string }> = {
+  travel: { label: 'Travel', icon: Plane, color: 'text-primary', bg: 'bg-primary/10' },
+  stress: { label: 'Stress', icon: Frown, color: 'text-danger', bg: 'bg-danger/10' },
+  sick: { label: 'Sick', icon: Thermometer, color: 'text-warning', bg: 'bg-warning/10' },
+  new_mattress: { label: 'New Bed', icon: BedDouble, color: 'text-success', bg: 'bg-success/10' },
+  alcohol: { label: 'Alcohol', icon: Wine, color: 'text-danger', bg: 'bg-danger/10' },
+  exercise: { label: 'Exercise', icon: Dumbbell, color: 'text-success', bg: 'bg-success/10' },
+  medication: { label: 'Meds', icon: Pill, color: 'text-warning', bg: 'bg-warning/10' },
+  caffeine: { label: 'Caffeine', icon: Coffee, color: 'text-warning', bg: 'bg-warning/10' },
+  screen_time: { label: 'Screens', icon: Smartphone, color: 'text-danger', bg: 'bg-danger/10' },
+  custom: { label: 'Other', icon: Tag, color: 'text-text-muted', bg: 'bg-card-hover' },
+};
 
 // Bottom navigation component
 // Stats summary component
@@ -50,7 +63,7 @@ function StatsSummary({ sleepLogs, profile }: { sleepLogs: SleepLog[]; profile: 
 }
 
 // Sleep log card component
-function SleepLogCard({ log, profile }: { log: SleepLog; profile: Profile }) {
+function SleepLogCard({ log, profile, tags }: { log: SleepLog; profile: Profile; tags: SleepLogTag[] }) {
   const recovery = calculateRecoveryScore(log, profile);
   const colorClass = getRecoveryColor(recovery.level);
 
@@ -130,6 +143,22 @@ function SleepLogCard({ log, profile }: { log: SleepLog; profile: Profile }) {
           </div>
         )}
 
+        {/* Tags */}
+        {tags.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-border flex flex-wrap gap-1.5">
+            {tags.map((t) => {
+              const config = tagConfig[t.tag];
+              const TagIcon = config.icon;
+              return (
+                <span key={t.id} className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full ${config.bg} ${config.color}`}>
+                  <TagIcon className="w-3 h-3" />
+                  {t.tag === 'custom' && t.custom_label ? t.custom_label : config.label}
+                </span>
+              );
+            })}
+          </div>
+        )}
+
         <p className="text-xs text-text-muted text-center mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
           Tap to edit
         </p>
@@ -168,6 +197,22 @@ export default async function HistoryPage() {
     .eq('user_id', user.id)
     .order('date', { ascending: false })
     .limit(30);
+
+  // Get tags for all displayed logs
+  const logIds = sleepLogs?.map((log) => log.id) || [];
+  const { data: allTags } = logIds.length > 0
+    ? await supabase
+        .from('sleep_log_tags')
+        .select('*')
+        .in('sleep_log_id', logIds)
+    : { data: [] };
+
+  // Group tags by sleep_log_id
+  const tagsByLogId: Record<string, SleepLogTag[]> = {};
+  (allTags || []).forEach((tag: SleepLogTag) => {
+    if (!tagsByLogId[tag.sleep_log_id]) tagsByLogId[tag.sleep_log_id] = [];
+    tagsByLogId[tag.sleep_log_id].push(tag);
+  });
 
   const hasLogs = sleepLogs && sleepLogs.length > 0;
   const nightCount = sleepLogs?.filter((log) => !log.is_nap).length || 0;
@@ -233,7 +278,7 @@ export default async function HistoryPage() {
             {/* Sleep log list */}
             <div className="space-y-4">
               {sleepLogs.map((log) => (
-                <SleepLogCard key={log.id} log={log} profile={profile} />
+                <SleepLogCard key={log.id} log={log} profile={profile} tags={tagsByLogId[log.id] || []} />
               ))}
             </div>
           </>
