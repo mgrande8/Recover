@@ -113,8 +113,23 @@ async function handleMonthlyReports(): Promise<{ generated: number; failed: numb
 
     const supabase = getSupabaseAdmin();
 
+    // Cron now runs hourly for per-user reminder timing — guard against
+    // generating the same monthly report 24x per day per user.
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
     for (const { id: userId, profile } of users) {
       try {
+        // Skip if a report was already generated in the past 24h
+        const { data: recentReport } = await supabase
+          .from('monthly_reports')
+          .select('id')
+          .eq('user_id', userId)
+          .gte('created_at', oneDayAgo)
+          .limit(1)
+          .maybeSingle();
+
+        if (recentReport) continue;
+
         const periodEnd = new Date();
         const periodStart = new Date();
         periodStart.setDate(periodStart.getDate() - 30);

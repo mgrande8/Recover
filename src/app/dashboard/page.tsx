@@ -9,7 +9,12 @@ import {
   ClipboardCheck,
   CloudSun,
   Star,
+  Trophy,
+  Briefcase,
+  Baby,
+  User,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui';
 import {
   calculateRecoveryScore,
@@ -33,6 +38,75 @@ import { DashboardTip } from '@/components/DashboardTip';
 import { SleepGoalRefinement } from '@/components/SleepGoalRefinement';
 import { calculateChecklistStreak } from '@/lib/checklist-streaks';
 import { Flame } from 'lucide-react';
+
+// First-day empty state, branched by user_type from onboarding so the very
+// first dashboard impression speaks to the segment the user picked.
+const FIRST_DAY_HERO: Record<
+  'athlete' | 'professional' | 'parent' | 'general',
+  {
+    icon: LucideIcon;
+    iconBg: string;
+    iconColor: string;
+    title: string;
+    body: string;
+    cta: string;
+  }
+> = {
+  athlete: {
+    icon: Trophy,
+    iconBg: 'bg-success/10',
+    iconColor: 'text-success',
+    title: 'Ready to track recovery?',
+    body: 'Log last night to start seeing how sleep is affecting your training and performance.',
+    cta: 'Log Recovery Sleep',
+  },
+  professional: {
+    icon: Briefcase,
+    iconBg: 'bg-primary/10',
+    iconColor: 'text-primary',
+    title: 'Your energy starts here',
+    body: 'Log last night to start tracking how sleep drives your focus and energy at work.',
+    cta: 'Log Last Night',
+  },
+  parent: {
+    icon: Baby,
+    iconBg: 'bg-warning/10',
+    iconColor: 'text-warning',
+    title: "Let's track the chaos",
+    body: 'Log how the night went — even fragmented sleep counts. Patterns will emerge as you log.',
+    cta: 'Log Last Night',
+  },
+  general: {
+    icon: Moon,
+    iconBg: 'bg-primary/10',
+    iconColor: 'text-primary',
+    title: 'No sleep data yet',
+    body: 'Start tracking your sleep to see your Recovery Score and personalized insights.',
+    cta: "Log Last Night's Sleep",
+  },
+};
+
+function FirstDayHero({ userType }: { userType: Profile['user_type'] | undefined }) {
+  const variant = (userType as keyof typeof FIRST_DAY_HERO) || 'general';
+  const hero = FIRST_DAY_HERO[variant] || FIRST_DAY_HERO.general;
+  const Icon = hero.icon;
+
+  return (
+    <div className="bg-card rounded-2xl border border-border p-8 text-center">
+      <div className={`w-16 h-16 ${hero.iconBg} rounded-full flex items-center justify-center mx-auto mb-4`}>
+        <Icon className={`w-8 h-8 ${hero.iconColor}`} />
+      </div>
+      <h2 className="text-xl font-semibold text-text-primary mb-2">{hero.title}</h2>
+      <p className="text-text-secondary mb-6 max-w-md mx-auto">{hero.body}</p>
+      <Link href="/dashboard/log">
+        <Button size="lg">
+          <Plus className="w-5 h-5 mr-2" />
+          {hero.cta}
+        </Button>
+      </Link>
+    </div>
+  );
+}
 
 // Recovery Score display component (now uses animated client component)
 function RecoveryScoreCard({
@@ -323,24 +397,8 @@ export default async function DashboardPage() {
           <DashboardTip level={calculateRecoveryScore(latestLog, profile).level} />
         )}
 
-        {/* Empty state */}
-        {!hasLogs && (
-          <div className="bg-card rounded-2xl border border-border p-8 text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Moon className="w-8 h-8 text-primary" />
-            </div>
-            <h2 className="text-xl font-semibold text-text-primary mb-2">No sleep data yet</h2>
-            <p className="text-text-secondary mb-6 max-w-md mx-auto">
-              Start tracking your sleep to see your Recovery Score and personalized insights.
-            </p>
-            <Link href="/dashboard/log">
-              <Button size="lg">
-                <Plus className="w-5 h-5 mr-2" />
-                Log Last Night&apos;s Sleep
-              </Button>
-            </Link>
-          </div>
-        )}
+        {/* Personalized first-day empty state */}
+        {!hasLogs && <FirstDayHero userType={profile?.user_type} />}
 
         {/* Dashboard with data */}
         {hasLogs && latestLog && (

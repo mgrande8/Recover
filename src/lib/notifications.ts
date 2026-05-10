@@ -107,6 +107,30 @@ export async function createStreakNotification(
   await createNotification(userId, 'streak', content.title, content.message, { streak });
 }
 
+// Reminder copy variants per user_type. Title + body tuned to the segment the
+// user picked in onboarding so the daily nudge feels written for them.
+const REMINDER_COPY: Record<
+  'athlete' | 'professional' | 'parent' | 'general',
+  { title: string; message: string }
+> = {
+  athlete: {
+    title: 'How did recovery feel?',
+    message: "Log last night's sleep to track how it's affecting training.",
+  },
+  professional: {
+    title: 'Quick sleep check',
+    message: "Log last night to keep your energy and focus trends accurate.",
+  },
+  parent: {
+    title: 'Got a moment?',
+    message: 'Log how the night went — every data point helps spot patterns.',
+  },
+  general: {
+    title: 'Time to log your sleep',
+    message: "Don't forget to log last night's sleep to keep your streak going!",
+  },
+};
+
 // Daily reminder notification (with duplicate prevention)
 export async function createReminderNotification(userId: string): Promise<void> {
   const supabase = getSupabaseAdmin();
@@ -127,12 +151,22 @@ export async function createReminderNotification(userId: string): Promise<void> 
     return;
   }
 
+  // Pull user_type to pick a copy variant. Falls back to 'general' if unset.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('user_type')
+    .eq('id', userId)
+    .single();
+
+  const variant = (profile?.user_type as keyof typeof REMINDER_COPY) || 'general';
+  const copy = REMINDER_COPY[variant] || REMINDER_COPY.general;
+
   await createNotification(
     userId,
     'reminder',
-    'Time to Log Your Sleep',
-    "Don't forget to log last night's sleep to keep your streak going!",
-    { type: 'daily_reminder' }
+    copy.title,
+    copy.message,
+    { type: 'daily_reminder', variant }
   );
 }
 
@@ -245,7 +279,10 @@ function getTodayInTimezone(timezone: string): string {
   }
 }
 
-// Get users who need daily reminders
+// Get users who need daily reminders right now.
+// Cron fires hourly — we only return users whose reminder_time hour matches
+// the current hour in their timezone, so each user gets pinged at their own
+// preferred local time instead of a global UTC moment.
 export async function getUsersForDailyReminder(): Promise<
   { id: string; reminder_time: string }[]
 > {
@@ -264,13 +301,20 @@ export async function getUsersForDailyReminder(): Promise<
 
   console.log(`[Reminder] Found ${profiles?.length || 0} users with push notifications enabled`);
 
-  // Filter to users who haven't logged today
   const usersToRemind: { id: string; reminder_time: string }[] = [];
 
   for (const profile of profiles || []) {
     const timezone = profile.timezone || 'America/New_York';
+    const reminderTime = profile.reminder_time || '10:00';
+    const reminderHour = parseInt(reminderTime.split(':')[0], 10);
+    const currentHour = getCurrentHourInTimezone(timezone);
 
-    // Check if user hasn't logged today (in their timezone)
+    // Only ping during the user's chosen reminder hour (in their TZ)
+    if (currentHour !== reminderHour) {
+      continue;
+    }
+
+    // And only if they haven't logged today (in their timezone)
     const todayInUserTz = getTodayInTimezone(timezone);
     const { data: todayLog } = await supabase
       .from('sleep_logs')
@@ -283,12 +327,14 @@ export async function getUsersForDailyReminder(): Promise<
     if (todayLog) {
       console.log(`[Reminder] User ${profile.id}: Skipping - already logged today (${todayInUserTz})`);
     } else {
-      console.log(`[Reminder] User ${profile.id}: Adding to reminder list - no log for ${todayInUserTz}`);
-      usersToRemind.push({ id: profile.id, reminder_time: profile.reminder_time });
+      console.log(
+        `[Reminder] User ${profile.id}: In window (${reminderTime} ${timezone}), no log for ${todayInUserTz} - adding`
+      );
+      usersToRemind.push({ id: profile.id, reminder_time: reminderTime });
     }
   }
 
-  console.log(`[Reminder] Total users to remind: ${usersToRemind.length}`);
+  console.log(`[Reminder] Total users to remind this hour: ${usersToRemind.length}`);
   return usersToRemind;
 }
 
