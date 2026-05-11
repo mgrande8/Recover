@@ -174,6 +174,13 @@ Configure these templates in **Supabase Dashboard → Authentication → Email T
 
 **Subject:** Reset your Recover password
 
+**IMPORTANT:** The button URL uses `{{ .TokenHash }}` directly instead of
+`{{ .ConfirmationURL }}`. `{{ .ConfirmationURL }}` defaults to the PKCE (code)
+flow, which requires a code verifier stored in the same browser that
+requested the reset — that breaks when a user requests reset inside the iOS
+app (Capacitor WebView) but taps the email link in Safari. The TokenHash flow
+is stateless and works across any browser, device, or app context.
+
 **Body (HTML):**
 
 ```html
@@ -212,7 +219,7 @@ Configure these templates in **Supabase Dashboard → Authentication → Email T
           <!-- CTA Button -->
           <tr>
             <td align="center" style="padding: 0 40px 32px 40px;">
-              <a href="{{ .ConfirmationURL }}" style="display: inline-block; padding: 16px 32px; background-color: #3B82F6; color: #FFFFFF; font-size: 16px; font-weight: 600; text-decoration: none; border-radius: 12px;">
+              <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password" style="display: inline-block; padding: 16px 32px; background-color: #3B82F6; color: #FFFFFF; font-size: 16px; font-weight: 600; text-decoration: none; border-radius: 12px;">
                 Reset Password
               </a>
             </td>

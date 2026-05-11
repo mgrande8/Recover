@@ -19,10 +19,12 @@ export default function ForgotPasswordPage() {
 
     try {
       const supabase = createClient();
-      // Use /auth/callback for the redirect - Supabase will append the code parameter
-      // The callback route will then redirect to /reset-password
+      // /auth/confirm handles both token_hash+type and code flows.
+      // The Supabase email template should build URLs using TokenHash so the
+      // link works across browser contexts (e.g. tapped in iOS Mail and
+      // opened in Safari while the request came from the Capacitor WebView).
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+        redirectTo: `${window.location.origin}/auth/confirm?next=/reset-password`,
       });
 
       if (resetError) {
