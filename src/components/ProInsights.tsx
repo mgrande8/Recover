@@ -54,6 +54,14 @@ const colors = {
   border: '#1F2937',
 };
 
+// Keep at most ~7 x-axis labels visible regardless of data length so the
+// 30-day view stays legible on phone widths. Recharts' `interval` is the
+// number of ticks to *skip*, so for 30 points we want every 5th (interval=4).
+function getXAxisInterval(count: number): number {
+  if (count <= 7) return 0;
+  return Math.max(0, Math.ceil(count / 7) - 1);
+}
+
 // Custom tooltip component
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -103,8 +111,7 @@ export function SleepDurationChart({ sleepLogs, profile }: { sleepLogs: SleepLog
     );
   }
 
-  const data = sleepLogs
-    .slice(0, 14)
+  const data = [...sleepLogs]
     .reverse()
     .map((log) => ({
       date: new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -134,6 +141,7 @@ export function SleepDurationChart({ sleepLogs, profile }: { sleepLogs: SleepLog
               fontSize={11}
               tickLine={false}
               axisLine={false}
+              interval={getXAxisInterval(data.length)}
             />
             <YAxis
               stroke={colors.muted}
@@ -192,8 +200,7 @@ export function SleepQualityChart({ sleepLogs }: { sleepLogs: SleepLog[] }) {
     );
   }
 
-  const data = sleepLogs
-    .slice(0, 14)
+  const data = [...sleepLogs]
     .reverse()
     .map((log) => ({
       date: new Date(log.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -217,6 +224,7 @@ export function SleepQualityChart({ sleepLogs }: { sleepLogs: SleepLog[] }) {
               fontSize={11}
               tickLine={false}
               axisLine={false}
+              interval={getXAxisInterval(data.length)}
             />
             <YAxis
               stroke={colors.muted}
@@ -259,8 +267,7 @@ export function RecoveryScoreChart({ sleepLogs, profile }: { sleepLogs: SleepLog
     );
   }
 
-  const data = sleepLogs
-    .slice(0, 14)
+  const data = [...sleepLogs]
     .reverse()
     .map((log) => {
       const recovery = calculateRecoveryScore(log, profile);
@@ -293,6 +300,7 @@ export function RecoveryScoreChart({ sleepLogs, profile }: { sleepLogs: SleepLog
               fontSize={11}
               tickLine={false}
               axisLine={false}
+              interval={getXAxisInterval(data.length)}
             />
             <YAxis
               stroke={colors.muted}
@@ -342,8 +350,7 @@ export function SleepTimingChart({ sleepLogs }: { sleepLogs: SleepLog[] }) {
     );
   }
 
-  const data = sleepLogs
-    .slice(0, 14)
+  const data = [...sleepLogs]
     .reverse()
     .map((log) => {
       const bedtime = new Date(log.bedtime);
@@ -386,6 +393,7 @@ export function SleepTimingChart({ sleepLogs }: { sleepLogs: SleepLog[] }) {
               fontSize={11}
               tickLine={false}
               axisLine={false}
+              interval={getXAxisInterval(data.length)}
             />
             <YAxis
               stroke={colors.muted}
